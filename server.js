@@ -146,8 +146,12 @@ function proxyRequestHeaders(req, targetUrl) {
         'accept': '*/*',
         'accept-encoding': 'identity',
         'user-agent': req.get('user-agent') || UA,
-        'referer': targetUrl.origin,
     };
+    // Some CDNs (e.g. Cloudflare in front of /content/ media paths) return 403
+    // for ANY segment request that carries a Referer, while playlist paths
+    // tolerate it. Attach the header only for playlist targets and omit it for
+    // segments and keys.
+    if (isPlaylistUrl(targetUrl.toString())) headers.referer = targetUrl.origin;
     const range = req.get('range');
     if (range) headers.range = range;
     return headers;
