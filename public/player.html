@@ -47,6 +47,40 @@
         if (targetUrl.protocol !== 'http:' && targetUrl.protocol !== 'https:') throw new Error('bad protocol');
     } catch (e) { setStatus('Invalid ?url= — must be an absolute HTTP(S) URL', 'err'); return; }
 
+    function startPlayback(playUrl) {
+        setStatus('Loading stream…');
+
+        if (window.Hls && Hls.isSupported()) {
+            var hls = new Hls({ maxBufferLength: 30 });
+            hls.on(Hls.Events.ERROR, function (_event, data) {
+                if (data.fatal) {
+                    setStatus('Playback error: ' + data.details + (data.response && data.response.code ? ' (HTTP ' + data.response.code + ')' : ''), 'err');
+                    try { hls.destroy(); } catch (e) {}
+                }
+            });
+            hls.on(Hls.Events.MANIFEST_PARSED, function () {
+                clearStatus();
+                video.play().catch(function () {});
+            });
+            hls.loadSource(playUrl);
+            hls.attachMedia(video);
+        } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+            video.src = playUrl;
+            video.play().catch(function () {});
+            clearStatus();
+        } else {
+            setStatus('This browser cannot play HLS streams. Use a modern browser.', 'err');
+        }
+    }
+
+    // Combined relay URLs (/proxy?url=…) come from our own origin and already
+    // carry the client-minted token, so skip minting here: the relay stamps its
+    // own server token and rewrites the playlist for playback.
+    if (targetUrl.origin === window.location.origin && targetUrl.pathname === '/proxy') {
+        startPlayback(targetUrl.toString());
+        return;
+    }
+
     // Mint the token FROM THE VIEWER so its ip_cidr matches the browser that plays.
     setStatus('Minting access token from ' + targetUrl.origin + ' …');
     fetch(targetUrl.origin + '/generate.php', { credentials: 'omit' })
@@ -67,29 +101,7 @@
         .then(function (token) {
             var playUrl = new URL(target);
             playUrl.searchParams.set('token', token);
-            setStatus('Loading stream…');
-
-            if (window.Hls && Hls.isSupported()) {
-                var hls = new Hls({ maxBufferLength: 30 });
-                hls.on(Hls.Events.ERROR, function (_event, data) {
-                    if (data.fatal) {
-                        setStatus('Playback error: ' + data.details + (data.response && data.response.code ? ' (HTTP ' + data.response.code + ')' : ''), 'err');
-                        try { hls.destroy(); } catch (e) {}
-                    }
-                });
-                hls.on(Hls.Events.MANIFEST_PARSED, function () {
-                    clearStatus();
-                    video.play().catch(function () {});
-                });
-                hls.loadSource(playUrl.toString());
-                hls.attachMedia(video);
-            } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-                video.src = playUrl.toString();
-                video.play().catch(function () {});
-                clearStatus();
-            } else {
-                setStatus('This browser cannot play HLS streams. Use a modern browser.', 'err');
-            }
+            startPlayback(playUrl.toString());
         })
         .catch(function (error) {
             var msg = error && error.message ? error.message : String(error);
