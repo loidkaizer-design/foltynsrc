@@ -3,335 +3,191 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>foltynsrc — TMDB → HLS Playlist</title>
+<title>foltynsrc — HLS sources</title>
 <style>
-    * { box-sizing: border-box; }
     :root {
-        --bg: #0a0a0c;
-        --card: #14141a;
-        --card-hover: #1e1e28;
-        --accent: #00d4ff;
-        --accent-hover: #33e0ff;
-        --text: #e8eaed;
-        --muted: #8e93a6;
-        --success: #00ff88;
-        --warning: #ffb300;
-        --danger: #ff4d4d;
-        --border: #262633;
+        --bg: #050505;
+        --surface: rgba(255,255,255,.075);
+        --surface-strong: rgba(255,255,255,.12);
+        --line: rgba(255,255,255,.14);
+        --line-bright: rgba(255,255,255,.3);
+        --text: #f7f7f7;
+        --muted: #9b9b9b;
+        --dim: #5e5e5e;
+        --good: #d9ffd9;
+        --bad: #ffd8d8;
     }
-    html { scroll-behavior: smooth; }
+    * { box-sizing: border-box; }
+    html { min-height: 100%; scroll-behavior: smooth; }
     body {
-        font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-        background: var(--bg);
-        color: var(--text);
-        margin: 0;
-        padding: 0;
-        line-height: 1.6;
         min-height: 100vh;
-    }
-    .wrap { max-width: 1100px; margin: 0 auto; padding: 32px 24px; }
-    header { display: flex; align-items: center; gap: 14px; margin-bottom: 8px; }
-    .logo {
-        width: 40px; height: 40px; border-radius: 10px; background: linear-gradient(135deg, #00d4ff, #7c3aed);
-        display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.1rem; color: #000;
-    }
-    h1 { margin: 0; font-size: 1.5rem; letter-spacing: -0.5px; }
-    h1 span { color: var(--accent); }
-    .sub { color: var(--muted); font-size: 0.9rem; margin-bottom: 26px; }
-
-    /* Search card */
-    .search-card {
-        background: var(--card);
-        border: 1px solid var(--border);
-        border-radius: 16px;
-        padding: 26px;
-        margin-bottom: 24px;
-        box-shadow: 0 8px 32px rgba(0,0,0,0.4);
-    }
-    .controls { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 14px; }
-    input[type="text"] {
-        flex: 1;
-        min-width: 200px;
-        padding: 12px 16px;
-        border: 1px solid var(--border);
-        border-radius: 10px;
-        background: #0c0c10;
+        margin: 0;
         color: var(--text);
-        font-size: 1rem;
-        outline: none;
-        transition: border-color 0.2s, box-shadow 0.2s;
+        background:
+            radial-gradient(circle at 12% -10%, rgba(255,255,255,.18), transparent 32rem),
+            radial-gradient(circle at 100% 12%, rgba(255,255,255,.09), transparent 28rem),
+            linear-gradient(145deg, #020202 0%, #111 48%, #030303 100%);
+        font: 15px/1.55 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        overflow-x: hidden;
     }
-    input[type="text"]:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,212,255,0.15); }
-    .toggle-group {
-        display: flex; gap: 6px; background: #0c0c10; border: 1px solid var(--border); border-radius: 10px; padding: 4px;
+    body::before {
+        position: fixed; inset: 0; pointer-events: none; content: ""; opacity: .14;
+        background-image: linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+        background-size: 48px 48px;
+        mask-image: linear-gradient(to bottom, black, transparent 75%);
     }
-    .toggle-btn {
-        padding: 8px 14px; border: none; border-radius: 8px; background: transparent; color: var(--muted);
-        font-size: 0.85rem; cursor: pointer; transition: all 0.2s;
-    }
-    .toggle-btn.active { background: var(--accent); color: #000; font-weight: 700; box-shadow: 0 2px 8px rgba(0,212,255,0.3); }
-    button.primary {
-        padding: 12px 24px; border: none; border-radius: 10px; background: var(--accent); color: #000;
-        font-weight: 700; cursor: pointer; font-size: 0.95rem; transition: all 0.2s;
-    }
-    button.primary:hover { background: var(--accent-hover); transform: translateY(-1px); }
-    button.primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; background: #3a3a46; }
-
-    .status {
-        margin-top: 10px; font-size: 0.85rem; min-height: 1.2em; display: flex; align-items: center; gap: 8px;
-    }
-    .status.ok { color: var(--success); }
-    .status.err { color: var(--danger); }
-    .status.warn { color: var(--warning); }
-    .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
-    .dot.ok { background: var(--success); box-shadow: 0 0 8px var(--success); }
-    .dot.err { background: var(--danger); box-shadow: 0 0 8px var(--danger); }
-    .dot.warn { background: var(--warning); box-shadow: 0 0 8px var(--warning); }
-
-    /* Results */
-    .results { margin-top: 6px; }
-    .results-title {
-        display: flex; align-items: center; gap: 10px; margin-bottom: 14px; color: var(--muted); font-size: 0.85rem;
-    }
-    .results-title b { color: var(--text); }
-    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
-    .server-card {
-        background: var(--card);
-        border: 1px solid var(--border);
-        border-radius: 14px;
-        padding: 20px;
-        transition: all 0.2s;
-        position: relative;
-        overflow: hidden;
-    }
-    .server-card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 12px 40px rgba(0,212,255,0.1); }
-    .server-card.ready { border-left: 4px solid var(--success); }
-    .server-card.token-failed { border-left: 4px solid var(--warning); }
-    .server-card.error { border-left: 4px solid var(--danger); }
-    .server-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
-    .server-name {
-        font-size: 1.15rem; font-weight: 800; letter-spacing: -0.5px; display: flex; align-items: center; gap: 8px;
-    }
-    .server-badge {
-        font-size: 0.65rem; padding: 2px 8px; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.5px;
-        font-weight: 700; color: #000;
-    }
-    .badge-ready { background: var(--success); }
-    .badge-token-failed { background: var(--warning); color: #000; }
-    .badge-error { background: var(--danger); }
-    .server-url {
-        background: #0c0c10; border: 1px solid var(--border); border-radius: 10px; padding: 14px;
-        font-size: 0.78rem; color: var(--accent); word-break: break-all; margin-bottom: 14px;
-        font-family: 'SF Mono', Monaco, monospace; overflow-wrap: break-word;
-    }
-    .actions { display: flex; gap: 8px; }
-    .btn-copy, .btn-play {
-        flex: 1; padding: 10px 14px; border: none; border-radius: 10px; font-size: 0.85rem; font-weight: 700;
-        cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px;
-    }
-    .btn-copy { background: var(--card-hover); color: var(--text); border: 1px solid var(--border); }
-    .btn-copy:hover { border-color: var(--accent); color: var(--accent); }
-    .btn-play { background: var(--accent); color: #000; }
-    .btn-play:hover { background: var(--accent-hover); }
-    .btn-play:disabled { opacity: 0.5; cursor: not-allowed; background: #3a3a46; }
-
-    /* Raw JSON */
-    .raw-section { margin-top: 24px; }
-    .raw-toggle {
-        background: transparent; border: 1px solid var(--border); color: var(--muted); padding: 8px 14px;
-        border-radius: 8px; cursor: pointer; font-size: 0.85rem; margin-bottom: 10px;
-    }
-    .raw-toggle:hover { border-color: var(--accent); color: var(--accent); }
-    pre.raw {
-        background: #0c0c10; border: 1px solid var(--border); border-radius: 12px; padding: 18px;
-        overflow: auto; font-size: 0.8rem; max-height: 500px; white-space: pre-wrap; word-break: break-all;
-        font-family: 'SF Mono', Monaco, monospace; display: none;
-    }
-    pre.raw.show { display: block; }
-
-    .empty {
-        text-align: center; color: var(--muted); padding: 60px 24px;
-    }
-    .empty b { color: var(--text); }
-
-    .hint {
-        margin-top: 24px; color: var(--muted); font-size: 0.82rem;
-    }
-    .hint code { color: var(--accent); background: #16161e; padding: 2px 6px; border-radius: 4px; }
-    a { color: var(--accent); text-decoration: none; }
-    a:hover { text-decoration: underline; }
+    button, input { font: inherit; }
+    button { color: inherit; }
+    .shell { width: min(1160px, calc(100% - 36px)); margin: 0 auto; padding: 42px 0 70px; position: relative; }
+    .topbar { display: flex; justify-content: space-between; align-items: center; gap: 18px; margin-bottom: 74px; animation: rise .7s both; }
+    .brand { display: inline-flex; align-items: center; gap: 12px; letter-spacing: -.03em; font-weight: 750; }
+    .mark { width: 32px; height: 32px; display: grid; place-items: center; border: 1px solid var(--line-bright); border-radius: 50%; background: linear-gradient(140deg,#fff,#636363); color: #050505; font-size: 12px; font-weight: 900; box-shadow: 0 0 28px rgba(255,255,255,.16); }
+    .brand small { display: block; margin-top: 1px; color: var(--muted); font-size: 10px; font-weight: 500; letter-spacing: .16em; text-transform: uppercase; }
+    .pill { border: 1px solid var(--line); border-radius: 999px; color: var(--muted); padding: 6px 11px; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; }
+    .hero { max-width: 760px; margin-bottom: 34px; animation: rise .8s .06s both; }
+    h1 { margin: 0; max-width: 720px; font-size: clamp(2.3rem, 7vw, 5.4rem); line-height: .98; letter-spacing: -.075em; font-weight: 650; }
+    h1 em { font-style: normal; color: #888; }
+    .lead { max-width: 590px; margin: 22px 0 0; color: var(--muted); font-size: 16px; }
+    .search-panel { display: flex; gap: 10px; padding: 9px; border: 1px solid var(--line); border-radius: 18px; background: linear-gradient(110deg, rgba(255,255,255,.14), rgba(255,255,255,.035)); box-shadow: 0 24px 80px rgba(0,0,0,.34); animation: rise .8s .13s both; }
+    .search-panel input { min-width: 0; flex: 1; padding: 14px 16px; color: var(--text); border: 0; outline: 0; border-radius: 11px; background: rgba(0,0,0,.38); }
+    .search-panel input::placeholder { color: #737373; }
+    .search-panel input:focus { box-shadow: inset 0 0 0 1px rgba(255,255,255,.3); }
+    .primary { padding: 0 22px; border: 0; border-radius: 11px; color: #060606; background: linear-gradient(135deg, #fff, #a6a6a6); cursor: pointer; font-weight: 750; transition: transform .25s, filter .25s, box-shadow .25s; }
+    .primary:hover { transform: translateY(-2px); filter: brightness(1.1); box-shadow: 0 9px 30px rgba(255,255,255,.16); }
+    .primary:disabled { opacity: .5; cursor: wait; transform: none; }
+    .status { min-height: 25px; margin: 13px 3px 0; color: var(--muted); font-size: 12px; }
+    .status.ok { color: var(--good); } .status.err { color: var(--bad); }
+    .status::before { content: ""; display: inline-block; width: 6px; height: 6px; margin: 0 8px 2px 0; border-radius: 50%; background: currentColor; box-shadow: 0 0 12px currentColor; }
+    .results { display: none; margin-top: 62px; animation: fade .45s both; }
+    .result-head { display: flex; justify-content: space-between; align-items: end; gap: 16px; padding-bottom: 15px; border-bottom: 1px solid var(--line); }
+    .result-head h2 { margin: 0; font-size: 13px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; }
+    .result-head p { margin: 0; color: var(--muted); font-size: 12px; }
+    .category { margin-top: 32px; }
+    .category-head { display: flex; align-items: center; gap: 12px; margin-bottom: 15px; }
+    .category-head h3 { margin: 0; font-size: 18px; letter-spacing: -.03em; }
+    .category-head span { color: var(--dim); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; }
+    .category-head::after { content: ""; flex: 1; height: 1px; background: linear-gradient(90deg, var(--line), transparent); }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; }
+    .source-card { position: relative; min-width: 0; padding: 18px; border: 1px solid var(--line); border-radius: 15px; background: linear-gradient(145deg, rgba(255,255,255,.1), rgba(255,255,255,.025)); overflow: hidden; opacity: 0; animation: rise .55s both; transition: border-color .25s, transform .25s, background .25s; }
+    .source-card::after { position: absolute; inset: 0; pointer-events: none; content: ""; background: linear-gradient(120deg, transparent 20%, rgba(255,255,255,.08), transparent 72%); transform: translateX(-120%); transition: transform .7s; }
+    .source-card:hover { border-color: var(--line-bright); transform: translateY(-4px); background: linear-gradient(145deg, rgba(255,255,255,.15), rgba(255,255,255,.04)); }
+    .source-card:hover::after { transform: translateX(120%); }
+    .card-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 14px; }
+    .source-name { font-size: 17px; font-weight: 700; letter-spacing: -.03em; }
+    .badge { padding: 4px 8px; border: 1px solid var(--line); border-radius: 999px; color: var(--good); font-size: 10px; letter-spacing: .1em; text-transform: uppercase; }
+    .badge.warn { color: #ffe2a8; } .badge.error { color: var(--bad); }
+    .source-url { min-height: 74px; padding: 11px; border: 1px solid rgba(255,255,255,.09); border-radius: 10px; color: #c9c9c9; background: rgba(0,0,0,.28); font: 11px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace; overflow-wrap: anywhere; }
+    .actions { display: flex; gap: 8px; margin-top: 13px; }
+    .action { flex: 1; padding: 9px 11px; border: 1px solid var(--line); border-radius: 9px; background: rgba(255,255,255,.055); cursor: pointer; font-size: 12px; transition: background .2s, border-color .2s, transform .2s; }
+    .action:hover { border-color: var(--line-bright); background: rgba(255,255,255,.13); transform: translateY(-1px); }
+    .action.play { color: #070707; border-color: #fff; background: #fff; font-weight: 700; }
+    .action:disabled { cursor: not-allowed; opacity: .38; transform: none; }
+    .token-error { margin-top: 10px; color: var(--muted); font-size: 11px; }
+    .raw-toggle { display: block; margin: 34px auto 0; padding: 8px 13px; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); background: transparent; cursor: pointer; font-size: 11px; }
+    .raw { display: none; max-height: 420px; margin-top: 12px; padding: 15px; border: 1px solid var(--line); border-radius: 12px; color: #bbb; background: rgba(0,0,0,.35); overflow: auto; white-space: pre-wrap; word-break: break-all; font: 11px/1.5 ui-monospace, monospace; }
+    .raw.show { display: block; }
+    .empty { display: none; padding: 80px 0; color: var(--muted); text-align: center; }
+    .foot { margin-top: 68px; color: var(--dim); font-size: 11px; text-align: center; }
+    code { color: #ddd; }
+    @keyframes rise { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+    @media (max-width: 620px) { .shell { width: min(100% - 24px, 1160px); padding-top: 25px; } .topbar { margin-bottom: 52px; } .pill { display: none; } .search-panel { flex-direction: column; } .primary { min-height: 48px; } .result-head { align-items: start; flex-direction: column; } }
 </style>
 </head>
 <body>
-<div class="wrap">
-    <header>
-        <div class="logo">F</div>
-        <div>
-            <h1>foltynsrc <span>v2</span></h1>
-            <div class="sub">TMDB ID &rarr; decrypted HLS <code>master.m3u8</code> playlists · Server or Universe naming</div>
-        </div>
-    </header>
+<main class="shell">
+    <nav class="topbar">
+        <div class="brand"><span class="mark">F</span><span>foltynsrc<small>stream index</small></span></div>
+        <div class="pill">Universe mode · live</div>
+    </nav>
 
-    <div class="search-card">
-        <div class="controls">
-            <input type="text" id="tmdb" placeholder="TMDB movie id (e.g. 1339713)" value="1339713">
-            <div class="toggle-group">
-                <button class="toggle-btn active" id="modeSeq" data-mode="sequential">Server 1, 2, 3…</button>
-                <button class="toggle-btn" id="modeUni" data-mode="universe">Milkyway, Andromeda…</button>
-            </div>
-            <button class="primary" id="go">Get Playlists</button>
-        </div>
-        <div class="status" id="status">
-            <span class="dot ok"></span>Ready. Enter a TMDB id and click Get Playlists.
-        </div>
-    </div>
+    <section class="hero">
+        <h1>Find the signal.<br><em>Play it anywhere.</em></h1>
+        <p class="lead">A clean index of HLS sources, with every stream available as an original source or through the server-side proxy.</p>
+    </section>
 
-    <div class="results" id="results">
-        <div class="results-title">
-            <span id="resultCount">0</span> server<span id="resultCountS">s</span> found
-            &nbsp;|&nbsp;
-            <button class="raw-toggle" id="rawBtn">Show Raw JSON</button>
-        </div>
-        <div class="grid" id="grid"></div>
-        <pre class="raw" id="rawJson"></pre>
-    </div>
+    <section class="search-panel">
+        <input id="tmdb" type="text" inputmode="numeric" placeholder="Enter a TMDB movie ID" value="1339713" aria-label="TMDB movie ID">
+        <button id="go" class="primary">Get sources</button>
+    </section>
+    <div id="status" class="status">Ready. Enter a TMDB ID to begin.</div>
 
-    <div class="empty" id="empty" style="display:none;">
-        <b>No results yet.</b><br>
-        Search a TMDB movie id above to fetch and decrypt its HLS playlists.
-    </div>
-
-    <div class="hint">
-        <b>API:</b> <code>GET /api?id=1339713&naming=universe</code> · 
-        <b>Naming:</b> <code>&naming=sequential</code> (Server 1, 2…) or <code>&naming=universe</code> (Milkyway, Andromeda…) ·
-        <b>Health:</b> <code>/health</code>
-    </div>
-</div>
-
+    <section id="results" class="results">
+        <div class="result-head"><h2>Available sources</h2><p><span id="resultCount">0</span> Universe source<span id="resultCountS">s</span></p></div>
+        <section class="category"><div class="category-head"><h3>Original</h3><span>Direct upstream</span></div><div id="originalGrid" class="grid"></div></section>
+        <section class="category"><div class="category-head"><h3>Proxy</h3><span>Server-side relay</span></div><div id="proxyGrid" class="grid"></div></section>
+        <button id="rawBtn" class="raw-toggle">Show raw response</button>
+        <pre id="rawJson" class="raw"></pre>
+    </section>
+    <div id="empty" class="empty">No sources yet.<br>Enter a TMDB ID above to load the Universe.</div>
+    <footer class="foot">Universe naming is always enabled · <code>/proxy?url=</code> relays playlists and segments</footer>
+</main>
 <script>
     const $ = (id) => document.getElementById(id);
-    const tmdb = $('tmdb');
-    const go = $('go');
-    const status = $('status');
-    const grid = $('grid');
-    const rawBtn = $('rawBtn');
-    const rawJson = $('rawJson');
-    const results = $('results');
-    const empty = $('empty');
-    const modeSeq = $('modeSeq');
-    const modeUni = $('modeUni');
-    let currentMode = 'sequential';
+    const tmdb = $('tmdb'), go = $('go'), status = $('status'), results = $('results'), empty = $('empty');
+    const originalGrid = $('originalGrid'), proxyGrid = $('proxyGrid'), rawBtn = $('rawBtn'), rawJson = $('rawJson');
     let lastJson = null;
 
-    function setStatus(msg, type = 'ok') {
-        status.textContent = msg;
-        status.className = 'status ' + type;
-        const dot = status.querySelector('.dot');
-        if (dot) dot.className = 'dot ' + type;
+    function setStatus(message, type = '') { status.textContent = message; status.className = 'status ' + type; }
+    function escapeHtml(value) { return String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+    function statusInfo(value) {
+        if (value === 'ready') return ['Ready', ''];
+        if (value === 'token-failed') return ['Token failed', 'warn'];
+        return ['Unavailable', 'error'];
     }
+    function proxyUrl(original) { return new URL('/proxy?url=' + encodeURIComponent(original), window.location.origin).toString(); }
 
-    function setMode(mode) {
-        currentMode = mode;
-        modeSeq.classList.toggle('active', mode === 'sequential');
-        modeUni.classList.toggle('active', mode === 'universe');
-    }
-    modeSeq.addEventListener('click', () => setMode('sequential'));
-    modeUni.addEventListener('click', () => setMode('universe'));
-
-    rawBtn.addEventListener('click', () => {
-        const show = !rawJson.classList.contains('show');
-        rawJson.classList.toggle('show', show);
-        rawBtn.textContent = show ? 'Hide Raw JSON' : 'Show Raw JSON';
-        if (show && lastJson) rawJson.textContent = JSON.stringify(lastJson, null, 2);
-    });
-
-    async function run() {
-        const id = tmdb.value.trim();
-        if (!id) return;
-        go.disabled = true;
-        go.textContent = 'Fetching…';
-        results.style.display = 'none';
-        empty.style.display = 'none';
-        grid.innerHTML = '';
-        rawJson.classList.remove('show');
-        rawBtn.textContent = 'Show Raw JSON';
-        setStatus('Running chain: gate → player → decrypt → per-server tokens…', 'ok');
-
-        try {
-            const res = await fetch('/api?id=' + encodeURIComponent(id) + '&naming=' + encodeURIComponent(currentMode));
-            const json = await res.json();
-            lastJson = json;
-
-            if (!res.ok || !json.success) {
-                setStatus('Error: ' + (json.error || res.status), 'err');
-                grid.innerHTML = '<div class="server-card error"><div class="server-head"><div class="server-name">Error</div></div><div class="server-url">' + (json.error || 'Unknown error') + '</div></div>';
-                results.style.display = 'block';
-                return;
-            }
-
-            render(json);
-            setStatus('OK — ' + json.servers.length + ' playlist(s) ready (' + json.naming_mode + ' naming)', 'ok');
-        } catch (e) {
-            setStatus('Error: ' + e.message, 'err');
-        } finally {
-            go.disabled = false;
-            go.textContent = 'Get Playlists';
-        }
+    function sourceCard(source, url, delay) {
+        const [label, tone] = statusInfo(source.status);
+        const card = document.createElement('article');
+        card.className = 'source-card';
+        card.style.animationDelay = delay + 'ms';
+        card.innerHTML = `
+            <div class="card-top"><div class="source-name">${escapeHtml(source.name)}</div><span class="badge ${tone}">${label}</span></div>
+            <div class="source-url">${escapeHtml(url)}</div>
+            <div class="actions">
+                <button class="action copy">Copy URL</button>
+                <button class="action play" ${source.status !== 'ready' ? 'disabled' : ''}>Play</button>
+            </div>
+            ${source.tokenError ? `<div class="token-error">${escapeHtml(source.tokenError)}</div>` : ''}
+        `;
+        card.querySelector('.copy').addEventListener('click', async (event) => {
+            try { await navigator.clipboard.writeText(url); const old = event.currentTarget.textContent; event.currentTarget.textContent = 'Copied'; setTimeout(() => event.currentTarget.textContent = old, 1200); }
+            catch (_) { event.currentTarget.textContent = 'Copy failed'; }
+        });
+        card.querySelector('.play').addEventListener('click', () => window.open(url, '_blank', 'noopener'));
+        return card;
     }
 
     function render(json) {
         const servers = json.servers || [];
-        grid.innerHTML = '';
-        document.getElementById('resultCount').textContent = servers.length;
-        document.getElementById('resultCountS').textContent = servers.length === 1 ? '' : 's';
-
-        servers.forEach(s => {
-            const card = document.createElement('div');
-            card.className = 'server-card ' + s.status;
-
-            const badgeClass = s.status === 'ready' ? 'badge-ready' : s.status === 'token-failed' ? 'badge-token-failed' : 'badge-error';
-            const badgeText = s.status === 'ready' ? 'Ready' : s.status === 'token-failed' ? 'Token Failed' : 'Error';
-
-            card.innerHTML = `
-                <div class="server-head">
-                    <div class="server-name">
-                        ${escapeHtml(s.name)}
-                        <span class="server-badge ${badgeClass}">${badgeText}</span>
-                    </div>
-                </div>
-                <div class="server-url">${escapeHtml(s.url)}</div>
-                <div class="actions">
-                    <button class="btn-copy" title="Copy URL" onclick="copyUrl(this)">📋 Copy</button>
-                    <button class="btn-play" ${s.status !== 'ready' ? 'disabled' : ''} onclick="openUrl('${escapeAttr(s.url)}')">▶ Play</button>
-                </div>
-                ${s.tokenError ? `<div style="margin-top:8px;font-size:0.72rem;color:var(--muted);">Token: ${escapeHtml(s.tokenError)}</div>` : ''}
-            `;
-            grid.appendChild(card);
+        originalGrid.innerHTML = ''; proxyGrid.innerHTML = '';
+        $('resultCount').textContent = servers.length;
+        $('resultCountS').textContent = servers.length === 1 ? '' : 's';
+        servers.forEach((source, index) => {
+            originalGrid.appendChild(sourceCard(source, source.url, index * 55));
+            proxyGrid.appendChild(sourceCard(source, proxyUrl(source.url), index * 55 + 80));
         });
-
-        results.style.display = 'block';
-        empty.style.display = 'none';
+        results.style.display = 'block'; empty.style.display = 'none';
     }
 
-    function escapeHtml(t) { return String(t).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[c])); }
-    function escapeAttr(t) { return String(t).replace(/"/g, '&quot;'); }
+    async function run() {
+        const id = tmdb.value.trim();
+        if (!id) return;
+        go.disabled = true; go.textContent = 'Loading'; results.style.display = 'none'; empty.style.display = 'none';
+        setStatus('Resolving Universe sources…');
+        try {
+            // Universe naming is intentional and cannot be changed in the UI.
+            const response = await fetch('/api?id=' + encodeURIComponent(id) + '&naming=universe');
+            const json = await response.json(); lastJson = json;
+            if (!response.ok || !json.success) throw new Error(json.error || ('Request failed (' + response.status + ')'));
+            render(json); setStatus(json.servers.length + ' Universe source' + (json.servers.length === 1 ? '' : 's') + ' ready', 'ok');
+        } catch (error) { setStatus(error.message, 'err'); empty.style.display = 'block'; }
+        finally { go.disabled = false; go.textContent = 'Get sources'; }
+    }
 
-    window.copyUrl = function(btn) {
-        const url = btn.parentElement.previousElementSibling.textContent.trim();
-        navigator.clipboard.writeText(url).then(() => {
-            const old = btn.textContent;
-            btn.textContent = 'Copied!';
-            setTimeout(() => btn.textContent = old, 1200);
-        });
-    };
-    window.openUrl = function(url) {
-        window.open(decodeURIComponent(url), '_blank');
-    };
-
-    go.addEventListener('click', run);
-    tmdb.addEventListener('keydown', (e) => { if (e.key === 'Enter') run(); });
-
-    // Auto-run on load
+    rawBtn.addEventListener('click', () => { const show = !rawJson.classList.contains('show'); rawJson.classList.toggle('show', show); rawBtn.textContent = show ? 'Hide raw response' : 'Show raw response'; if (show && lastJson) rawJson.textContent = JSON.stringify(lastJson, null, 2); });
+    go.addEventListener('click', run); tmdb.addEventListener('keydown', (event) => { if (event.key === 'Enter') run(); });
     run();
 </script>
 </body>
