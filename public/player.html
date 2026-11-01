@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>foltynsrc — player</title>
+<style>
+    :root { --bg: #050505; --text: #f7f7f7; --muted: #9b9b9b; --line: rgba(255,255,255,.14); --good: #d9ffd9; --bad: #ffd8d8; }
+    * { box-sizing: border-box; }
+    body { min-height: 100vh; margin: 0; display: flex; flex-direction: column; background: var(--bg); color: var(--text); font: 15px/1.55 Inter, ui-sans-serif, system-ui, sans-serif; }
+    header { display: flex; align-items: center; gap: 10px; padding: 14px 20px; border-bottom: 1px solid var(--line); letter-spacing: -.03em; font-weight: 700; }
+    .mark { width: 26px; height: 26px; display: grid; place-items: center; border: 1px solid rgba(255,255,255,.3); border-radius: 50%; background: linear-gradient(140deg,#fff,#636363); color: #050505; font-size: 11px; font-weight: 900; }
+    header small { color: var(--muted); font-size: 10px; font-weight: 500; letter-spacing: .16em; text-transform: uppercase; }
+    main { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; padding: 24px; }
+    video { width: min(1080px, 100%); aspect-ratio: 16/9; background: #000; border: 1px solid var(--line); border-radius: 14px; outline: none; }
+    #status { color: var(--muted); font-size: 13px; text-align: center; max-width: 720px; overflow-wrap: anywhere; }
+    #status.ok { color: var(--good); } #status.err { color: var(--bad); }
+    .meta { color: var(--muted); font: 11px/1.5 ui-monospace, monospace; max-width: 720px; text-align: center; overflow-wrap: anywhere; }
+</style>
+</head>
+<body>
+<header><span class="mark">F</span> foltynsrc <small>direct mode</small></header>
+<main>
+    <video id="video" controls playsinline></video>
+    <div id="status">Starting…</div>
+    <div id="meta" class="meta"></div>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.min.js"></script>
+<script>
+(function () {
+    var qs = new URLSearchParams(location.search);
+    var target = qs.get('url');
+    var video = document.getElementById('video');
+    var statusEl = document.getElementById('status');
+    var metaEl = document.getElementById('meta');
+
+    function setStatus(message, tone) {
+        statusEl.textContent = message;
+        statusEl.className = tone || '';
+    }
+
+    if (!target) { setStatus('Missing ?url=<master.m3u8>', 'err'); return; }
+
+    var targetUrl;
+    try {
+        targetUrl = new URL(target);
+        if (targetUrl.protocol !== 'http:' && targetUrl.protocol !== 'https:') throw new Error('bad protocol');
+    } catch (e) { setStatus('Invalid ?url= — must be an absolute HTTP(S) URL', 'err'); return; }
+
+    // Mint the token FROM THE VIEWER so its ip_cidr matches the browser that plays.
+    setStatus('Minting access token from ' + targetUrl.origin + ' …');
+    fetch(targetUrl.origin + '/generate.php', { credentials: 'omit' })
+        .then(function (res) {
+            if (!res.ok) throw new Error('generate.php returned HTTP ' + res.status);
+            return res.text();
+        })
+        .then(function (text) {
+            var token = text.trim();
+            try {
+                var j = JSON.parse(token);
+                if (typeof j === 'string') token = j;
+                else if (j && typeof j === 'object') token = j.token || j.data || j.string || j.result || token;
+            } catch (e) { /* plain-text token */ }
+            if (!token) throw new Error('generate.php returned an empty token');
+            return token;
+        })
+        .then(function (token) {
+            var playUrl = new URL(target);
+            playUrl.searchParams.set('token', token);
+            metaEl.textContent = playUrl.origin + playUrl.pathname;
+            setStatus('Loading stream…');
+
+            if (window.Hls && Hls.isSupported()) {
+                var hls = new Hls({ maxBufferLength: 30 });
+                hls.on(Hls.Events.ERROR, function (_event, data) {
+                    if (data.fatal) {
+                        setStatus('Playback error: ' + data.details + (data.response && data.response.code ? ' (HTTP ' + data.response.code + ')' : ''), 'err');
+                        try { hls.destroy(); } catch (e) {}
+                    }
+                });
+                hls.on(Hls.Events.MANIFEST_PARSED, function () {
+                    setStatus('Playing — token minted by your browser, stream served directly by upstream.', 'ok');
+                    video.play().catch(function () {});
+                });
+                hls.loadSource(playUrl.toString());
+                hls.attachMedia(video);
+            } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                video.src = playUrl.toString();
+                video.play().catch(function () {});
+                setStatus('Playing natively — token minted by your browser.', 'ok');
+            } else {
+                setStatus('This browser cannot play HLS streams. Use a modern browser.', 'err');
+            }
+        })
+        .catch(function (error) {
+            var msg = error && error.message ? error.message : String(error);
+            setStatus('Could not start direct playback: ' + msg +
+                ' — if this is a network/CORS failure, the upstream host refused a cross-origin browser request; use the server proxy instead.', 'err');
+        });
+})();
+</script>
+</body>
+</html>
