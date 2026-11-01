@@ -177,7 +177,7 @@ async function proxyHls(req, res) {
             const playlist = await upstream.text();
             const rewritten = rewritePlaylist(playlist, finalUrl, req);
             res.set('Content-Type', contentType || 'application/vnd.apple.mpegurl');
-            res.set('Cache-Control', upstream.headers.get('cache-control') || 'no-store');
+            res.set('Cache-Control', 'no-store');
             return res.send(rewritten);
         }
 
@@ -186,14 +186,15 @@ async function proxyHls(req, res) {
             const playlist = new TextDecoder().decode(body);
             const rewritten = rewritePlaylist(playlist, finalUrl, req);
             res.set('Content-Type', contentType || 'application/vnd.apple.mpegurl');
-            res.set('Cache-Control', upstream.headers.get('cache-control') || 'no-store');
+            res.set('Cache-Control', 'no-store');
             return res.send(rewritten);
         }
 
         for (const header of RESPONSE_HEADERS) {
             const value = upstream.headers.get(header);
-            if (value && header !== 'content-length') res.set(header, value);
+            if (value && header !== 'content-length' && header !== 'cache-control') res.set(header, value);
         }
+        res.set('Cache-Control', 'no-store');
         return res.send(Buffer.from(body));
     } catch (e) {
         const message = e.name === 'AbortError' ? 'upstream request timed out' : e.message;
