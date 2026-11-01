@@ -4,6 +4,7 @@
  * Endpoints:
  *   GET /                       -> HTML search page
  *   GET /api?id=<tmdb_id>       -> JSON with media info + HLS playlist URL(s)
+ *   GET /proxy?url=<absolute>   -> server-side HLS playlist/segment proxy
  *   GET /health                 -> health check
  *
  * Query params:
@@ -35,9 +36,12 @@ app.use(express.json());
 // CORS so the API can be called from anywhere
 app.use((_req, res, next) => {
     res.header('Access-Control-Allow-Origin', '*');
-    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+    res.header('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Range');
+    res.header('Access-Control-Expose-Headers', 'Accept-Ranges, Content-Length, Content-Range, Content-Type');
     next();
 });
+app.options('*', (_req, res) => res.sendStatus(204));
 
 const UA =
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36';
@@ -72,6 +76,131 @@ function extract(html, key) {
 }
 function b64dec(s) {
     return new Uint8Array(Buffer.from(s, 'base64'));
+}
+
+/* ---------- server-side HLS proxy ---------- */
+const PROXY_TIMEOUT_MS = 20000;
+const HOP_BY_HOP_HEADERS = new Set([
+    'connection', 'keep-alive', 'proxy-authenticate', 'proxy-authorization',
+    'te', 'trailer', 'transfer-encoding', 'upgrade', 'host', 'content-length',
+]);
+const RESPONSE_HEADERS = [
+    'accept-ranges', 'cache-control', 'content-disposition', 'content-encoding',
+    'content-language', 'content-range', 'content-type', 'etag', 'expires',
+    'last-modified', 'vary',
+];
+
+function proxyRequestHeaders(req) {
+    const headers = {};
+    for (const [name, value] of Object.entries(req.headers)) {
+        const lower = name.toLowerCase();
+        if (!HOP_BY_HOP_HEADERS.has(lower) && !lower.startsWith('x-forwarded-')) {
+            headers[name] = Array.isArray(value) ? value.join(', ') : value;
+        }
+    }
+    // Do not let an upstream gzip response prevent playlist rewriting.
+    headers['accept-encoding'] = 'identity';
+    headers['user-agent'] = req.get('user-agent') || UA;
+    return headers;
+}
+
+function isPlaylistResponse(response, finalUrl, bodyStart) {
+    const contentType = (response.headers.get('content-type') || '').toLowerCase();
+    return contentType.includes('mpegurl') || /\.m3u8(?:$|[?#])/i.test(finalUrl) ||
+        /^\s*#EXTM3U/m.test(bodyStart);
+}
+
+function proxyUrlFor(_req, absoluteUrl) {
+    // Relative URLs work both locally and on Vercel without trusting Host headers.
+    return '/proxy?url=' + encodeURIComponent(absoluteUrl);
+}
+
+function rewritePlaylist(playlist, baseUrl, req) {
+    const rewrite = (value) => {
+        const uri = value.trim();
+        if (!uri || /^(?:data|blob|about):/i.test(uri)) return value;
+        try {
+            return proxyUrlFor(req, new URL(uri, baseUrl).toString());
+        } catch (e) {
+            return value;
+        }
+    };
+
+    return playlist.split(/(\r?\n)/).map((part) => {
+        if (/^\r?\n$/.test(part)) return part;
+        // Handles EXT-X-KEY, EXT-X-MAP, audio/subtitle renditions, and variants.
+        let line = part.replace(/(URI\s*=\s*")([^"]*)(")/gi,
+            (_match, prefix, uri, suffix) => prefix + rewrite(uri) + suffix);
+        // Bare media or variant playlist references are non-comment lines.
+        if (line.trim() && !line.trim().startsWith('#') &&
+            !/^(?:\/\/|[a-z][a-z\d+.-]*:)/i.test(line.trim())) {
+            line = rewrite(line);
+        }
+        return line;
+    }).join('');
+}
+
+async function proxyHls(req, res) {
+    const target = Array.isArray(req.query.url) ? req.query.url[0] : req.query.url;
+    if (!target || typeof target !== 'string') {
+        return res.status(400).json({ success: false, error: 'missing ?url=<m3u8-or-segment-url>' });
+    }
+
+    let targetUrl;
+    try {
+        targetUrl = new URL(target);
+        if (!['http:', 'https:'].includes(targetUrl.protocol)) throw new Error('unsupported protocol');
+    } catch (e) {
+        return res.status(400).json({ success: false, error: 'url must be an absolute HTTP(S) URL' });
+    }
+
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), PROXY_TIMEOUT_MS);
+    try {
+        const upstream = await globalThis.fetch(targetUrl, {
+            method: 'GET',
+            headers: proxyRequestHeaders(req),
+            redirect: 'follow',
+            signal: controller.signal,
+        });
+        const finalUrl = upstream.url || targetUrl.toString();
+        const contentType = upstream.headers.get('content-type') || '';
+
+        if (!upstream.ok) {
+            const errorBody = await upstream.text();
+            return res.status(upstream.status).type(contentType || 'text/plain').send(errorBody);
+        }
+
+        // Buffer only playlists, which must be rewritten. Segments are returned as
+        // binary data and therefore never cause the browser to contact upstream.
+        if (contentType.toLowerCase().includes('mpegurl') || /\.m3u8(?:$|[?#])/i.test(finalUrl)) {
+            const playlist = await upstream.text();
+            const rewritten = rewritePlaylist(playlist, finalUrl, req);
+            res.set('Content-Type', contentType || 'application/vnd.apple.mpegurl');
+            res.set('Cache-Control', upstream.headers.get('cache-control') || 'no-store');
+            return res.send(rewritten);
+        }
+
+        const body = await upstream.arrayBuffer();
+        if (isPlaylistResponse(upstream, finalUrl, new TextDecoder().decode(body.slice(0, 1024)))) {
+            const playlist = new TextDecoder().decode(body);
+            const rewritten = rewritePlaylist(playlist, finalUrl, req);
+            res.set('Content-Type', contentType || 'application/vnd.apple.mpegurl');
+            res.set('Cache-Control', upstream.headers.get('cache-control') || 'no-store');
+            return res.send(rewritten);
+        }
+
+        for (const header of RESPONSE_HEADERS) {
+            const value = upstream.headers.get(header);
+            if (value && header !== 'content-length') res.set(header, value);
+        }
+        return res.send(Buffer.from(body));
+    } catch (e) {
+        const message = e.name === 'AbortError' ? 'upstream request timed out' : e.message;
+        return res.status(502).json({ success: false, error: 'proxy request failed: ' + message });
+    } finally {
+        clearTimeout(timer);
+    }
 }
 
 /* ---------- step 4: ChaCha20 decrypt via WASM (mirrors vsdec.js) ---------- */
@@ -272,6 +401,8 @@ app.get('/health', (_req, res) => {
 app.get('/', (_req, res) => {
     res.sendFile('index.html', { root: __dirname + '/public' });
 });
+
+app.get('/proxy', proxyHls);
 
 app.get('/api', async (req, res) => {
     const tmdb = req.query.id;
