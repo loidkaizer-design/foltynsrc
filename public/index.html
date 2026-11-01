@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vidsrc.to Replica — TMDB → HLS Playlist</title>
+<style>
+    * { box-sizing: border-box; }
+    body {
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+        background: #0b0c10;
+        color: #c5c6c7;
+        margin: 0;
+        padding: 24px;
+        line-height: 1.5;
+    }
+    .wrap { max-width: 900px; margin: 0 auto; }
+    h1 { margin: 0 0 8px; font-size: 1.5rem; letter-spacing: 0.5px; text-transform: uppercase; }
+    .sub { color: #8e93a6; font-size: 0.9rem; margin-bottom: 24px; }
+    card {
+        background: #12141a;
+        border: 1px solid #22262e;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 16px;
+    }
+    .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    input[type="text"] {
+        flex: 1;
+        min-width: 150px;
+        padding: 10px 14px;
+        border: 1px solid #333a45;
+        border-radius: 6px;
+        background: #0b0c10;
+        color: #c5c6c7;
+        font-size: 1rem;
+    }
+    input[type="text"]:focus { outline: none; border-color: #4f8cff; }
+    button {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 6px;
+        background: #4f8cff;
+        color: #fff;
+        font-weight: 600;
+        cursor: pointer;
+        font-size: 0.95rem;
+    }
+    button:hover { background: #6fa4ff; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; background: #3a424d; }
+    .status { margin-top: 10px; font-size: 0.85rem; color: #8e93a6; min-height: 1.2em; }
+    .status.ok { color: #7fd67f; }
+    .status.err { color: #ff7f7f; }
+    pre {
+        background: #0b0c10;
+        border: 1px solid #22262e;
+        border-radius: 8px;
+        padding: 16px;
+        overflow: auto;
+        font-size: 0.85rem;
+        max-height: 500px;
+        white-space: pre-wrap;
+        word-break: break-all;
+    }
+    .stream-url { color: #7fd67f; word-break: break-all; }
+    a { color: #4f8cff; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .hint { color: #8e93a6; font-size: 0.8rem; margin-top: 6px; }
+    .example { color: #8e93a6; font-size: 0.85rem; }
+    .example b { color: #c5c6c7; }
+</style>
+</head>
+<body>
+<div class="wrap">
+    <h1>Vidsrc.to Replica</h1>
+    <div class="sub">Enter a TMDB movie id to get the decrypted HLS <code>master.m3u8</code> playlist JSON.</div>
+
+    <card>
+        <div class="row">
+            <input type="text" id="tmdb" placeholder="TMDB id (e.g. 1339713)" value="1339713">
+            <button id="go">Get Playlist</button>
+        </div>
+        <div class="status" id="status"></div>
+        <div class="hint">Tip: you can also call the API directly:
+            <br><code>/api?id=1339713</code>
+        </div>
+        <pre id="out">{
+  "success": true,
+  "tmdb": "1339713",
+  "title": "Obsession 2025",
+  "streams": [
+    { "url": "https://.../master.m3u8?token=...", "origin": "..." }
+  ]
+}</pre>
+    </card>
+
+    <card>
+        <h2 style="margin-top:0">API</h2>
+        <div class="example">
+            <b>Request:</b> <code>GET /api?id={tmdb_id}</code><br>
+            <b>Example:</b> <a href="/api?id=1339713" target="_blank">/api?id=1339713</a><br>
+            <b>Response:</b> JSON object with <code>success</code>, <code>title</code>, <code>imdb</code>, <code>backdrop</code>, and <code>streams[]</code> (each with <code>url</code>, <code>origin</code>, <code>raw</code>). Plus the full raw API response under <code>raw</code>.
+        </div>
+    </card>
+</div>
+
+<script>
+    const $ = (id) => document.getElementById(id);
+    const tmdb = $('tmdb');
+    const go = $('go');
+    const status = $('status');
+    const out = $('out');
+
+    async function run() {
+        const id = tmdb.value.trim();
+        if (!id) return;
+        go.disabled = true;
+        status.textContent = 'Fetching chain (gate → player → API → decrypt → token)…';
+        status.className = 'status';
+        out.textContent = '…loading';
+        try {
+            const res = await fetch('/api?id=' + encodeURIComponent(id));
+            const json = await res.json();
+            if (!res.ok || !json.success) {
+                status.textContent = 'Error: ' + (json.error || res.status);
+                status.className = 'status err';
+                out.textContent = JSON.stringify(json, null, 2);
+                return;
+            }
+            status.textContent = 'OK — ' + json.streams.length + ' stream URL(s) ready.';
+            status.className = 'status ok';
+            out.textContent = JSON.stringify(json, null, 2);
+        } catch (e) {
+            status.textContent = 'Error: ' + e.message;
+            status.className = 'status err';
+            out.textContent = JSON.stringify({ success: false, error: e.message }, null, 2);
+        } finally {
+            go.disabled = false;
+        }
+    }
+
+    go.addEventListener('click', run);
+    tmdb.addEventListener('keydown', (e) => { if (e.key === 'Enter') run(); });
+
+    // Auto-run once on load
+    run();
+</script>
+</body>
+</html>

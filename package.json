@@ -1,0 +1,16 @@
+{
+  "name": "vidsrc-replica-api",
+  "version": "1.0.0",
+  "description": "Replica of vidsrc.to embed flow — TMDB id → HLS playlist JSON endpoint",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.22.3"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
