@@ -114,7 +114,6 @@
 
     <section id="results" class="results">
         <div class="result-head"><h2>Available sources</h2><p><span id="resultCount">0</span> Universe source<span id="resultCountS">s</span></p></div>
-        <section class="category"><div class="category-head"><h3>Original</h3><span>Direct upstream</span></div><div id="originalGrid" class="grid"></div></section>
         <section class="category"><div class="category-head"><h3>Proxy</h3><span>Server-side relay</span></div><div id="proxyGrid" class="grid"></div></section>
         <button id="rawBtn" class="raw-toggle">Show raw response</button>
         <pre id="rawJson" class="raw"></pre>
@@ -125,7 +124,7 @@
 <script>
     const $ = (id) => document.getElementById(id);
     const tmdb = $('tmdb'), go = $('go'), status = $('status'), results = $('results'), empty = $('empty');
-    const originalGrid = $('originalGrid'), proxyGrid = $('proxyGrid'), rawBtn = $('rawBtn'), rawJson = $('rawJson');
+    const proxyGrid = $('proxyGrid'), rawBtn = $('rawBtn'), rawJson = $('rawJson');
     let lastJson = null;
 
     function setStatus(message, type = '') { status.textContent = message; status.className = 'status ' + type; }
@@ -161,12 +160,11 @@
 
     function render(json) {
         const servers = json.servers || [];
-        originalGrid.innerHTML = ''; proxyGrid.innerHTML = '';
+        proxyGrid.innerHTML = '';
         $('resultCount').textContent = servers.length;
         $('resultCountS').textContent = servers.length === 1 ? '' : 's';
         servers.forEach((source, index) => {
-            originalGrid.appendChild(sourceCard(source, source.url, index * 55));
-            proxyGrid.appendChild(sourceCard(source, proxyUrl(source.url), index * 55 + 80));
+            proxyGrid.appendChild(sourceCard(source, proxyUrl(source.url), index * 55));
         });
         results.style.display = 'block'; empty.style.display = 'none';
     }

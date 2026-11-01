@@ -178,9 +178,10 @@ function rewritePlaylist(playlist, baseUrl, req) {
         // Handles EXT-X-KEY, EXT-X-MAP, audio/subtitle renditions, and variants.
         let line = part.replace(/(URI\s*=\s*")([^"]*)(")/gi,
             (_match, prefix, uri, suffix) => prefix + rewrite(uri) + suffix);
-        // Bare media or variant playlist references are non-comment lines.
-        if (line.trim() && !line.trim().startsWith('#') &&
-            !/^(?:\/\/|[a-z][a-z\d+.-]*:)/i.test(line.trim())) {
+        // Every non-comment URI must stay behind the relay, including absolute
+        // URLs. Leaving absolute segment URLs untouched causes fragLoadError:
+        // the browser bypasses the relay and loses the upstream token/IP context.
+        if (line.trim() && !line.trim().startsWith('#')) {
             line = rewrite(line);
         }
         return line;
