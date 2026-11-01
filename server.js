@@ -4,8 +4,7 @@
  * Endpoints:
  *   GET /                       -> HTML search page
  *   GET /api?id=<tmdb_id>       -> JSON with media info + HLS playlist URL(s)
- *   GET /proxy?url=<absolute>   -> browser: direct-mode player page (viewer-minted token)
- *                                  non-browser: server-side HLS relay (proxy-minted token)
+ *   GET /proxy?url=<absolute>   -> server-side HLS relay (playlist and video bytes only)
  *   GET /health                 -> health check
  *
  * Query params:
@@ -20,13 +19,9 @@
  *   5. Per-host /generate.php   -> JWT token stamped onto each master.m3u8
  *
  * Token model (upstream JWTs embed an ip_cidr claim):
- *   - A browser visiting /proxy?url=<master.m3u8> gets the direct-mode player
- *     page: the BROWSER mints its own token via <origin>/generate.php and
- *     plays the stream directly, so the minting IP matches the playing IP.
- *   - Non-browser clients (VLC, apps, curl) get the server-side relay, where
- *     the proxy mints a fresh token from its own egress IP per request
- *     (a token minted by a different instance is rejected upstream with
- *     "ip not in range").
+ *   - Every client gets the same server-side relay. The proxy mints a fresh
+ *     token from its own egress IP, then rewrites playlists so all video
+ *     segments and keys stay inside /proxy.
  *
  * Other fixes:
  *   - Segments are streamed through instead of buffered, so responses
@@ -183,9 +178,10 @@ function rewritePlaylist(playlist, baseUrl, req) {
         // Handles EXT-X-KEY, EXT-X-MAP, audio/subtitle renditions, and variants.
         let line = part.replace(/(URI\s*=\s*")([^"]*)(")/gi,
             (_match, prefix, uri, suffix) => prefix + rewrite(uri) + suffix);
-        // Bare media or variant playlist references are non-comment lines.
-        if (line.trim() && !line.trim().startsWith('#') &&
-            !/^(?:\/\/|[a-z][a-z\d+.-]*:)/i.test(line.trim())) {
+        // Every non-comment URI must stay behind the relay, including absolute
+        // URLs. Leaving absolute segment URLs untouched causes fragLoadError:
+        // the browser bypasses the relay and loses the upstream token/IP context.
+        if (line.trim() && !line.trim().startsWith('#')) {
             line = rewrite(line);
         }
         return line;
@@ -213,18 +209,9 @@ async function proxyHls(req, res) {
         return res.status(400).json({ success: false, error: 'url must be an absolute HTTP(S) URL' });
     }
 
-    // Direct mode: when a real browser navigates to /proxy?url=<master.m3u8>,
-    // serve the player page. The browser then mints its own IP-bound token via
-    // the upstream /generate.php and plays the stream DIRECTLY — the viewer
-    // who bought the ticket is the viewer who uses it, so the ip_cidr check
-    // always passes and the server stays out of the video path.
-    const accept = req.get('accept') || '';
-    if (accept.includes('text/html')) {
-        return res.sendFile('player.html', { root: __dirname + '/public' });
-    }
-
-    // Server-side relay (players like VLC, apps, curl — no browser to mint the
-    // token, so the proxy mints its own below).
+    // Always relay the media itself. Do not return an HTML player page here:
+    // browsers request HLS manifests with Accept: text/html in some contexts,
+    // and returning HTML prevents the video element from ever receiving HLS.
     const origin = targetUrl.protocol + '//' + targetUrl.host;
     const hasToken = targetUrl.searchParams.has('token');
 
@@ -525,7 +512,7 @@ if (require.main === module) {
     app.listen(PORT, () => {
         console.log(`foltynsrc API listening on http://localhost:${PORT}`);
         console.log(`  GET /          -> HTML search page`);
-        console.log(`  GET /proxy?url=<master.m3u8> -> direct-mode player (browser) / relay (non-browser)`);
+        console.log(`  GET /proxy?url=<master.m3u8> -> HLS playlist and media relay`);
         console.log(`  GET /api?id=1339713&naming=universe -> JSON playlist`);
         console.log(`  GET /health    -> health check`);
     });
