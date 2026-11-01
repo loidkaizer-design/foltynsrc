@@ -407,7 +407,8 @@ app.get('/proxy', proxyHls);
 
 app.get('/api', async (req, res) => {
     const tmdb = req.query.id;
-    const namingMode = req.query.naming === 'universe' ? 'universe' : 'sequential';
+    // Universe naming is the single supported presentation mode.
+    const namingMode = 'universe';
     if (!tmdb) {
         return res.status(400).json({
             success: false,
