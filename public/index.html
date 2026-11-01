@@ -120,7 +120,13 @@
         out.textContent = '…loading';
         try {
             const res = await fetch('/api?id=' + encodeURIComponent(id));
-            const json = await res.json();
+            const body = await res.text();
+            let json;
+            try {
+                json = JSON.parse(body);
+            } catch (_error) {
+                throw new Error('Server returned invalid JSON: ' + body.slice(0, 120));
+            }
             if (!res.ok || !json.success) {
                 status.textContent = 'Error: ' + (json.error || res.status);
                 status.className = 'status err';

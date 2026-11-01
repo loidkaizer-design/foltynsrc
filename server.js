@@ -97,7 +97,17 @@ async function fetchJson(url, headers) {
         headers: { 'User-Agent': UA, ...headers },
         redirect: 'follow',
     });
-    return res.json();
+    const text = await res.text();
+    const contentType = res.headers.get('content-type') || '';
+    if (!res.ok) {
+        throw new Error(`upstream ${res.status} at ${new URL(url).hostname}`);
+    }
+    try {
+        return JSON.parse(text);
+    } catch (_error) {
+        const preview = text.replace(/\\s+/g, ' ').slice(0, 160);
+        throw new Error(`upstream returned non-JSON (${contentType || 'unknown content type'}): ${preview}`);
+    }
 }
 async function fetchText(url, headers) {
     const res = await globalThis.fetch(url, {
