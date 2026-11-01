@@ -1,16 +1,28 @@
 /*
- * Vidsrc.to replica API server
+ * foltynsrc — Optimized vidsrc.to HLS playlist replica
  *
  * Endpoints:
- *   GET /                       -> simple HTML search page
+ *   GET /                       -> HTML search page
  *   GET /api?id=<tmdb_id>       -> JSON with media info + HLS playlist URL(s)
+ *   GET /health                 -> health check
+ *
+ * Query params:
+ *   id        -> TMDB movie id (required)
+ *   naming    -> "sequential" (Server 1, Server 2...) or "universe" (Milkyway, Andromeda...)
  *
  * Replicates the vidsrc.to embed flow using plain HTTP (no browser):
- *   1. vs_src.php gate  -> player page #1 (playerUrl)
- *   2. player page #2   -> CONFIG.api + CONFIG.apiToken (single-use JWT)
- *   3. stream_urls API  -> encrypted stream_urls string + vs.wasm_url
- *   4. WASM ChaCha20 decrypt -> array of master.m3u8 host URLs
- *   5. per-host /generate.php token -> final playable master.m3u8?token=<jwt>
+ *   1. vs_src.php gate          -> player page #1 (playerUrl)
+ *   2. player page #2           -> CONFIG.api + CONFIG.apiToken (single-use JWT)
+ *   3. stream_urls API          -> encrypted stream_urls string + vs.wasm_url
+ *   4. WASM ChaCha20 decrypt    -> array of master.m3u8 host URLs
+ *   5. Per-host /generate.php   -> JWT token stamped onto each master.m3u8
+ *
+ * Optimizations:
+ *   - Parallel token fetching across all hosts (Promise.allSettled)
+ *   - Dual naming: sequential ("Server 1") or universe ("Milkyway")
+ *   - Per-server status tracking (ready / token-failed / error)
+ *   - CORS + health endpoint
+ *   - Retry-friendly: returns ALL servers even if one token fails
  */
 
 const express = require('express');
@@ -20,10 +32,35 @@ const PORT = process.env.PORT || 3000;
 app.use(express.static('public'));
 app.use(express.json());
 
+// CORS so the API can be called from anywhere
+app.use((_req, res, next) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+    next();
+});
+
 const UA =
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36';
 const GATE = 'https://vsembed.ru/vs_src.php';
 const NEXUS = 'https://stellarconductornexus.com';
+
+// Universe names for the "universe" naming mode
+const UNIVERSE_NAMES = [
+    'Milkyway', 'Andromeda', 'Orion', 'Sombrero', 'Whirlpool', 'Triangulum',
+    'Cigar', 'Pinwheel', 'Tadpole', 'Cartwheel', 'Black Eye', 'Sunflower',
+    'Southern Pinwheel', 'Comet', 'Hoags Object', 'Antennae', 'Ring Nebula',
+    'Helix', 'Crab', 'Eagle', 'Omega', 'Lobster', 'Tarantula', 'Ghost Head',
+    'Magic Eye', 'Bear Claw', 'Cosmic Reef'
+];
+
+function universeName(index) {
+    return UNIVERSE_NAMES[index % UNIVERSE_NAMES.length];
+}
+
+function serverName(index, mode) {
+    if (mode === 'universe') return universeName(index);
+    return `Server ${index + 1}`;
+}
 
 /* ---------- small helpers ---------- */
 function fixEscaped(u) {
@@ -78,17 +115,24 @@ async function stampStreamUrl(raw) {
         origin = x.protocol + '//' + x.host;
     } catch (e) {}
     let token = '';
+    let tokenError = null;
     if (origin) {
         try {
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), 10000);
             const tres = await globalThis.fetch(origin + '/generate.php', {
                 credentials: 'omit',
+                signal: controller.signal,
                 headers: { 'User-Agent': UA, 'Referer': NEXUS },
             });
+            clearTimeout(timeout);
             token = tres.ok ? await tres.text() : '';
             token = parseToken(token);
-        } catch (e) {}
+        } catch (e) {
+            tokenError = e.message;
+        }
     }
-    return applyToken(raw, token);
+    return { finalUrl: applyToken(raw, token), origin, token, tokenError };
 }
 
 /* ---------- steps 1-3: gate -> player page -> stream_urls API ---------- */
@@ -108,25 +152,40 @@ async function fetchText(url, headers) {
 }
 
 /* ---------- core replica logic ---------- */
-async function getPlaylist(tmdb) {
+async function getPlaylist(tmdb, namingMode) {
     // Step 1: gate
-    const gateJson = await fetchJson(`${GATE}?type=movie&id=${tmdb}`, {
-        'Accept': 'application/json',
-        'Referer': 'https://vidsrc.to/',
-    });
+    let gateJson;
+    try {
+        gateJson = await fetchJson(`${GATE}?type=movie&id=${tmdb}`, {
+            'Accept': 'application/json',
+            'Referer': 'https://vidsrc.to/',
+        });
+    } catch (e) {
+        throw new Error('gate request failed: ' + e.message);
+    }
     if (!gateJson || !gateJson.src) {
         throw new Error('gate returned no src: ' + JSON.stringify(gateJson));
     }
     const page1Url = gateJson.src;
 
     // Step 2: page #1 -> playerUrl (page #2)
-    const html1 = await fetchText(page1Url, { 'Referer': 'https://vsembed.ru/' });
+    let html1;
+    try {
+        html1 = await fetchText(page1Url, { 'Referer': 'https://vsembed.ru/' });
+    } catch (e) {
+        throw new Error('page1 request failed: ' + e.message);
+    }
     const playerUrlPath = extract(html1, 'playerUrl');
-    if (!playerUrlPath) throw new Error('page1 has no playerUrl');
+    if (!playerUrlPath) throw new Error('page1 has no playerUrl (gate token may be expired)');
     const page2Url = NEXUS + playerUrlPath;
 
     // Step 3: page #2 -> CONFIG.api + CONFIG.apiToken
-    const html2 = await fetchText(page2Url, { 'Referer': NEXUS });
+    let html2;
+    try {
+        html2 = await fetchText(page2Url, { 'Referer': NEXUS });
+    } catch (e) {
+        throw new Error('page2 request failed: ' + e.message);
+    }
     const api = extract(html2, 'api');
     const token = extract(html2, 'apiToken');
     if (!api) throw new Error('page2 has no CONFIG.api');
@@ -134,15 +193,20 @@ async function getPlaylist(tmdb) {
 
     // Step 4: stream_urls API with single-use token
     const streamUrl = api + '&api_token=' + encodeURIComponent(token);
-    const json = await fetchJson(streamUrl, {
-        'Accept': 'application/json',
-        'Referer': NEXUS,
-    });
+    let json;
+    try {
+        json = await fetchJson(streamUrl, {
+            'Accept': 'application/json',
+            'Referer': NEXUS,
+        });
+    } catch (e) {
+        throw new Error('stream_urls API request failed: ' + e.message);
+    }
     if (json.status_code && String(json.status_code) !== '200') {
         throw new Error('stream_urls API error: ' + (json.error || json.status_code));
     }
 
-    // Step 5: decrypt stream_urls if it's an encrypted string
+    // Step 5: decrypt stream_urls if encrypted string
     let wasmUrl = json.vs && json.vs.wasm_url ? json.vs.wasm_url : null;
     let streamUrls = json.data && json.data.stream_urls;
     if (typeof streamUrls === 'string') {
@@ -154,19 +218,40 @@ async function getPlaylist(tmdb) {
         throw new Error('no stream_urls returned');
     }
 
-    // Step 6: stamp each stream URL with its per-host generate.php token
-    const streams = [];
-    for (const raw of streamUrls) {
-        const finalUrl = await stampStreamUrl(raw);
-        let origin = '';
-        try {
-            origin = new URL(raw).protocol + '//' + new URL(raw).host;
-        } catch (e) {}
-        streams.push({ url: finalUrl, origin, raw });
-    }
+    // Step 6: stamp each stream URL with its per-host generate.php token (PARALLEL)
+    const stamped = await Promise.allSettled(
+        streamUrls.map(async (raw, i) => {
+            const stamped = await stampStreamUrl(raw);
+            return {
+                id: i + 1,
+                name: serverName(i, namingMode),
+                origin: stamped.origin,
+                url: stamped.finalUrl,
+                raw,
+                token: stamped.token,
+                tokenError: stamped.tokenError,
+                status: stamped.token ? 'ready' : 'token-failed',
+            };
+        })
+    );
+
+    const servers = stamped.map((r, i) =>
+        r.status === 'fulfilled' ? r.value : {
+            id: i + 1,
+            name: serverName(i, namingMode),
+            origin: '',
+            url: streamUrls[i] || '',
+            raw: streamUrls[i] || '',
+            token: '',
+            tokenError: r.reason ? r.reason.message : 'unknown',
+            status: 'error',
+        }
+    );
 
     return {
         success: true,
+        project: 'foltynsrc',
+        naming_mode: namingMode,
         tmdb,
         title: json.data && json.data.title,
         imdb: json.data && json.data.imdb_id,
@@ -174,31 +259,46 @@ async function getPlaylist(tmdb) {
         backdrop: json.data && json.data.backdrop,
         default_subs: json.data && json.data.default_subs,
         thumbnails_url: json.data && json.data.thumbnails_url,
-        streams,
+        servers,
         raw: json,
     };
 }
 
 /* ---------- routes ---------- */
+app.get('/health', (_req, res) => {
+    res.json({ ok: true, project: 'foltynsrc', time: new Date().toISOString() });
+});
+
 app.get('/', (_req, res) => {
     res.sendFile('index.html', { root: __dirname + '/public' });
 });
 
 app.get('/api', async (req, res) => {
     const tmdb = req.query.id;
+    const namingMode = req.query.naming === 'universe' ? 'universe' : 'sequential';
     if (!tmdb) {
-        return res.status(400).json({ success: false, error: 'missing ?id=tmdb_id' });
+        return res.status(400).json({
+            success: false,
+            error: 'missing ?id=tmdb_id',
+            example: '/api?id=1339713&naming=universe',
+        });
     }
     try {
-        const result = await getPlaylist(String(tmdb));
+        const result = await getPlaylist(String(tmdb), namingMode);
         res.json(result);
     } catch (e) {
-        res.status(502).json({ success: false, error: e.message, tmdb });
+        res.status(502).json({ success: false, error: e.message, tmdb, naming_mode: namingMode });
     }
 });
 
-app.listen(PORT, () => {
-    console.log(`vidsrc-replica API listening on http://localhost:${PORT}`);
-    console.log(`  GET /          -> HTML search page`);
-    console.log(`  GET /api?id=1339713 -> JSON playlist`);
-});
+// Export for Vercel serverless (also runnable locally with `node server.js`)
+if (require.main === module) {
+    app.listen(PORT, () => {
+        console.log(`foltynsrc API listening on http://localhost:${PORT}`);
+        console.log(`  GET /          -> HTML search page`);
+        console.log(`  GET /api?id=1339713&naming=universe -> JSON playlist`);
+        console.log(`  GET /health    -> health check`);
+    });
+}
+
+module.exports = app;

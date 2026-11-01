@@ -1,14 +1,14 @@
 {
-  "name": "vidsrc-replica-api",
-  "version": "1.0.0",
-  "description": "Replica of vidsrc.to embed flow — TMDB id → HLS playlist JSON endpoint",
+  "name": "foltynsrc",
+  "version": "2.0.0",
+  "description": "foltynsrc — Optimized vidsrc.to HLS playlist replica. TMDB ID → decrypted HLS playlist URLs with Server/Universe naming.",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js"
   },
   "dependencies": {
-    "express": "^4.22.3"
+    "express": "^4.19.2"
   },
   "engines": {
     "node": ">=18"
