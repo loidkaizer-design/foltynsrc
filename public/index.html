@@ -77,6 +77,9 @@
     .badge { padding: 4px 8px; border: 1px solid var(--line); border-radius: 999px; color: var(--good); font-size: 10px; letter-spacing: .1em; text-transform: uppercase; }
     .badge.warn { color: #ffe2a8; } .badge.error { color: var(--bad); }
     .source-url { min-height: 74px; padding: 11px; border: 1px solid rgba(255,255,255,.09); border-radius: 10px; color: #c9c9c9; background: rgba(0,0,0,.28); font: 11px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace; overflow-wrap: anywhere; }
+    .source-meta { display: flex; justify-content: space-between; gap: 10px; margin-top: 9px; color: var(--muted); font-size: 10px; letter-spacing: .06em; text-transform: uppercase; }
+    .docs-link { color: var(--muted); font-size: 12px; text-decoration: none; }
+    .docs-link:hover { color: var(--text); }
     .actions { display: flex; gap: 8px; margin-top: 13px; }
     .action { flex: 1; padding: 9px 11px; border: 1px solid var(--line); border-radius: 9px; background: rgba(255,255,255,.055); cursor: pointer; font-size: 12px; transition: background .2s, border-color .2s, transform .2s; }
     .action:hover { border-color: var(--line-bright); background: rgba(255,255,255,.13); transform: translateY(-1px); }
@@ -98,7 +101,7 @@
 <main class="shell">
     <nav class="topbar">
         <div class="brand"><span class="mark">F</span><span>foltynsrc<small>stream index</small></span></div>
-        <div class="pill">Universe mode · live</div>
+        <div><a class="docs-link" href="/api.html">API docs</a> <span class="pill">Universe mode · live</span></div>
     </nav>
 
     <section class="hero">
@@ -144,6 +147,7 @@
         card.innerHTML = `
             <div class="card-top"><div class="source-name">${escapeHtml(source.name)}</div><span class="badge ${tone}">${label}</span></div>
             <div class="source-url">${escapeHtml(url)}</div>
+            <div class="source-meta"><span>${escapeHtml(source.format || 'HLS · master.m3u8')}</span><span>${escapeHtml(source.origin || 'relay')}</span></div>
             <div class="actions">
                 <button class="action copy">Copy URL</button>
                 <button class="action play" ${source.status !== 'ready' ? 'disabled' : ''}>Play</button>
