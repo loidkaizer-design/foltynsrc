@@ -4,7 +4,8 @@
  * Endpoints:
  *   GET /                       -> HTML search page
  *   GET /api?id=<tmdb_id>       -> JSON with media info + HLS playlist URL(s)
- *   GET /proxy?url=<absolute>   -> server-side HLS playlist/segment proxy
+ *   GET /proxy?url=<absolute>   -> browser: direct-mode player page (viewer-minted token)
+ *                                  non-browser: server-side HLS relay (proxy-minted token)
  *   GET /health                 -> health check
  *
  * Query params:
@@ -18,15 +19,23 @@
  *   4. WASM ChaCha20 decrypt    -> array of master.m3u8 host URLs
  *   5. Per-host /generate.php   -> JWT token stamped onto each master.m3u8
  *
- * Optimizations:
- *   - Parallel token fetching across all hosts (Promise.allSettled)
- *   - Dual naming: sequential ("Server 1") or universe ("Milkyway")
- *   - Per-server status tracking (ready / token-failed / error)
- *   - CORS + health endpoint
- *   - Retry-friendly: returns ALL servers even if one token fails
+ * Token model (upstream JWTs embed an ip_cidr claim):
+ *   - A browser visiting /proxy?url=<master.m3u8> gets the direct-mode player
+ *     page: the BROWSER mints its own token via <origin>/generate.php and
+ *     plays the stream directly, so the minting IP matches the playing IP.
+ *   - Non-browser clients (VLC, apps, curl) get the server-side relay, where
+ *     the proxy mints a fresh token from its own egress IP per request
+ *     (a token minted by a different instance is rejected upstream with
+ *     "ip not in range").
+ *
+ * Other fixes:
+ *   - Segments are streamed through instead of buffered, so responses
+ *     larger than the serverless body limit still play
+ *   - Upstream requests no longer carry the browser's foreign Referer/Origin
  */
 
 const express = require('express');
+const { Readable } = require('stream');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -78,36 +87,79 @@ function b64dec(s) {
     return new Uint8Array(Buffer.from(s, 'base64'));
 }
 
-/* ---------- server-side HLS proxy ---------- */
+/* ---------- per-host token minting (IP-bound JWTs) ---------- */
+// generate.php tokens embed the requesting IP range (ip_cidr claim).
+// A token minted by the /api call (or a different serverless instance) is
+// rejected when the proxy fetches from a different egress IP. The server-side
+// relay therefore mints its own fresh token, cached briefly per origin.
+const TOKEN_CACHE_MS = 4 * 60 * 1000;
+const tokenCache = new Map();
+
+function parseToken(text) {
+    if (text == null) return '';
+    const t = String(text).trim();
+    if (t && (t.charAt(0) === '{' || t.charAt(0) === '[')) {
+        try {
+            const j = JSON.parse(t);
+            if (typeof j === 'string') return j;
+            if (j && typeof j === 'object') return j.token || j.data || j.string || j.result || '';
+        } catch (e) {}
+    }
+    return t;
+}
+
+async function mintToken(origin, force) {
+    const now = Date.now();
+    const hit = tokenCache.get(origin);
+    if (!force && hit && hit.expires > now) return hit.token;
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 10000);
+    try {
+        const res = await globalThis.fetch(origin + '/generate.php', {
+            credentials: 'omit',
+            signal: controller.signal,
+            headers: { 'User-Agent': UA, 'Referer': NEXUS },
+        });
+        const token = res.ok ? parseToken(await res.text()) : '';
+        if (token) tokenCache.set(origin, { token: token, expires: now + TOKEN_CACHE_MS });
+        return token;
+    } finally {
+        clearTimeout(timer);
+    }
+}
+
+function withTokenUrl(url, token) {
+    const u = new URL(url);
+    u.searchParams.set('token', token);
+    return u.toString();
+}
+
+/* ---------- server-side HLS relay ---------- */
 const PROXY_TIMEOUT_MS = 20000;
-const HOP_BY_HOP_HEADERS = new Set([
-    'connection', 'keep-alive', 'proxy-authenticate', 'proxy-authorization',
-    'te', 'trailer', 'transfer-encoding', 'upgrade', 'host', 'content-length',
-]);
 const RESPONSE_HEADERS = [
     'accept-ranges', 'cache-control', 'content-disposition', 'content-encoding',
     'content-language', 'content-range', 'content-type', 'etag', 'expires',
     'last-modified', 'vary',
 ];
 
-function proxyRequestHeaders(req) {
-    const headers = {};
-    for (const [name, value] of Object.entries(req.headers)) {
-        const lower = name.toLowerCase();
-        if (!HOP_BY_HOP_HEADERS.has(lower) && !lower.startsWith('x-forwarded-')) {
-            headers[name] = Array.isArray(value) ? value.join(', ') : value;
-        }
-    }
-    // Do not let an upstream gzip response prevent playlist rewriting.
-    headers['accept-encoding'] = 'identity';
-    headers['user-agent'] = req.get('user-agent') || UA;
+function proxyRequestHeaders(req, targetUrl) {
+    // Upstream hosts reject requests that carry a foreign Referer/Origin
+    // (e.g. foltynsrc.vercel.app), so send a minimal, same-origin-looking
+    // header set instead of forwarding the browser's headers. Range is
+    // forwarded so seeking keeps working.
+    const headers = {
+        'accept': '*/*',
+        'accept-encoding': 'identity',
+        'user-agent': req.get('user-agent') || UA,
+        'referer': targetUrl.origin,
+    };
+    const range = req.get('range');
+    if (range) headers.range = range;
     return headers;
 }
 
-function isPlaylistResponse(response, finalUrl, bodyStart) {
-    const contentType = (response.headers.get('content-type') || '').toLowerCase();
-    return contentType.includes('mpegurl') || /\.m3u8(?:$|[?#])/i.test(finalUrl) ||
-        /^\s*#EXTM3U/m.test(bodyStart);
+function isPlaylistUrl(finalUrl) {
+    return /\.m3u8(?:$|[?#])/i.test(finalUrl);
 }
 
 function proxyUrlFor(_req, absoluteUrl) {
@@ -140,6 +192,13 @@ function rewritePlaylist(playlist, baseUrl, req) {
     }).join('');
 }
 
+function sendPlaylist(res, upstream, playlist, finalUrl, req) {
+    const rewritten = rewritePlaylist(playlist, finalUrl, req);
+    res.set('Content-Type', upstream.headers.get('content-type') || 'application/vnd.apple.mpegurl');
+    res.set('Cache-Control', 'no-store');
+    return res.send(rewritten);
+}
+
 async function proxyHls(req, res) {
     const target = Array.isArray(req.query.url) ? req.query.url[0] : req.query.url;
     if (!target || typeof target !== 'string') {
@@ -154,48 +213,105 @@ async function proxyHls(req, res) {
         return res.status(400).json({ success: false, error: 'url must be an absolute HTTP(S) URL' });
     }
 
+    // Direct mode: when a real browser navigates to /proxy?url=<master.m3u8>,
+    // serve the player page. The browser then mints its own IP-bound token via
+    // the upstream /generate.php and plays the stream DIRECTLY — the viewer
+    // who bought the ticket is the viewer who uses it, so the ip_cidr check
+    // always passes and the server stays out of the video path.
+    const accept = req.get('accept') || '';
+    if (accept.includes('text/html')) {
+        return res.sendFile('player.html', { root: __dirname + '/public' });
+    }
+
+    // Server-side relay (players like VLC, apps, curl — no browser to mint the
+    // token, so the proxy mints its own below).
+    const origin = targetUrl.protocol + '//' + targetUrl.host;
+    const hasToken = targetUrl.searchParams.has('token');
+
+    // Mint a fresh token from THIS instance before the first fetch: the token
+    // embedded in the URL was minted elsewhere and is IP-bound upstream.
+    let effectiveUrl = targetUrl.toString();
+    if (hasToken) {
+        try {
+            const fresh = await mintToken(origin, false);
+            if (fresh) effectiveUrl = withTokenUrl(effectiveUrl, fresh);
+        } catch (e) { /* fall back to the embedded token */ }
+    }
+
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), PROXY_TIMEOUT_MS);
     try {
-        const upstream = await globalThis.fetch(targetUrl, {
+        const doFetch = (url) => globalThis.fetch(url, {
             method: 'GET',
-            headers: proxyRequestHeaders(req),
+            headers: proxyRequestHeaders(req, targetUrl),
             redirect: 'follow',
             signal: controller.signal,
         });
-        const finalUrl = upstream.url || targetUrl.toString();
+
+        let upstream = await doFetch(effectiveUrl);
+
+        if (!upstream.ok && hasToken) {
+            const errText = await upstream.text().catch(() => '');
+            const retryable = upstream.status === 403 || upstream.status === 401 ||
+                /not in range|expired|invalid/i.test(errText);
+            if (retryable) {
+                try {
+                    const fresh = await mintToken(origin, true);
+                    if (fresh) upstream = await doFetch(withTokenUrl(targetUrl.toString(), fresh));
+                } catch (e) { /* fall through to the error response */ }
+            }
+            if (!upstream.ok) {
+                const finalErr = await upstream.text().catch(() => '');
+                return res.status(upstream.status)
+                    .type(upstream.headers.get('content-type') || 'text/plain')
+                    .send(finalErr || errText || ('upstream returned ' + upstream.status));
+            }
+        } else if (!upstream.ok) {
+            const errorBody = await upstream.text();
+            return res.status(upstream.status)
+                .type(upstream.headers.get('content-type') || 'text/plain')
+                .send(errorBody);
+        }
+
+        const finalUrl = upstream.url || effectiveUrl;
         const contentType = upstream.headers.get('content-type') || '';
 
-        if (!upstream.ok) {
-            const errorBody = await upstream.text();
-            return res.status(upstream.status).type(contentType || 'text/plain').send(errorBody);
-        }
-
-        // Buffer only playlists, which must be rewritten. Segments are returned as
-        // binary data and therefore never cause the browser to contact upstream.
-        if (contentType.toLowerCase().includes('mpegurl') || /\.m3u8(?:$|[?#])/i.test(finalUrl)) {
+        // Playlists must be rewritten; fetch them as text.
+        if (contentType.toLowerCase().includes('mpegurl') || isPlaylistUrl(finalUrl)) {
             const playlist = await upstream.text();
-            const rewritten = rewritePlaylist(playlist, finalUrl, req);
-            res.set('Content-Type', contentType || 'application/vnd.apple.mpegurl');
-            res.set('Cache-Control', 'no-store');
-            return res.send(rewritten);
+            return sendPlaylist(res, upstream, playlist, finalUrl, req);
         }
 
-        const body = await upstream.arrayBuffer();
-        if (isPlaylistResponse(upstream, finalUrl, new TextDecoder().decode(body.slice(0, 1024)))) {
-            const playlist = new TextDecoder().decode(body);
-            const rewritten = rewritePlaylist(playlist, finalUrl, req);
-            res.set('Content-Type', contentType || 'application/vnd.apple.mpegurl');
+        // Small non-playlist bodies may still be mislabelled playlists; sniff them.
+        const contentLength = parseInt(upstream.headers.get('content-length') || '', 10);
+        if (!Number.isNaN(contentLength) && contentLength > 0 && contentLength <= 512 * 1024) {
+            const body = Buffer.from(await upstream.arrayBuffer());
+            const head = body.slice(0, 1024).toString('utf8');
+            if (/^\s*#EXTM3U/m.test(head)) {
+                return sendPlaylist(res, upstream, body.toString('utf8'), finalUrl, req);
+            }
+            for (const header of RESPONSE_HEADERS) {
+                const value = upstream.headers.get(header);
+                if (value && header !== 'content-length' && header !== 'cache-control') res.set(header, value);
+            }
             res.set('Cache-Control', 'no-store');
-            return res.send(rewritten);
+            return res.send(body);
         }
 
+        // Binary media (segments/keys): stream through instead of buffering so
+        // responses larger than the serverless body limit still play. Clearing
+        // the abort timer lets long segment downloads finish.
+        clearTimeout(timer);
+        res.status(upstream.status);
         for (const header of RESPONSE_HEADERS) {
             const value = upstream.headers.get(header);
             if (value && header !== 'content-length' && header !== 'cache-control') res.set(header, value);
         }
         res.set('Cache-Control', 'no-store');
-        return res.send(Buffer.from(body));
+        if (!upstream.body) return res.end();
+        const nodeStream = Readable.fromWeb(upstream.body);
+        nodeStream.on('error', () => res.end());
+        return nodeStream.pipe(res);
     } catch (e) {
         const message = e.name === 'AbortError' ? 'upstream request timed out' : e.message;
         return res.status(502).json({ success: false, error: 'proxy request failed: ' + message });
@@ -221,18 +337,6 @@ async function decryptStreamUrls(encB64, wasmUrl) {
 }
 
 /* ---------- step 5: per-host /generate.php token ---------- */
-function parseToken(text) {
-    if (text == null) return '';
-    const t = String(text).trim();
-    if (t && (t.charAt(0) === '{' || t.charAt(0) === '[')) {
-        try {
-            const j = JSON.parse(t);
-            if (typeof j === 'string') return j;
-            if (j && typeof j === 'object') return j.token || j.data || j.string || j.result || '';
-        } catch (e) {}
-    }
-    return t;
-}
 function applyToken(url, token) {
     if (!token) return url;
     if (url.indexOf('__TOKEN__') > -1) return url.split('__TOKEN__').join(token);
@@ -248,16 +352,8 @@ async function stampStreamUrl(raw) {
     let tokenError = null;
     if (origin) {
         try {
-            const controller = new AbortController();
-            const timeout = setTimeout(() => controller.abort(), 10000);
-            const tres = await globalThis.fetch(origin + '/generate.php', {
-                credentials: 'omit',
-                signal: controller.signal,
-                headers: { 'User-Agent': UA, 'Referer': NEXUS },
-            });
-            clearTimeout(timeout);
-            token = tres.ok ? await tres.text() : '';
-            token = parseToken(token);
+            token = await mintToken(origin, false);
+            if (!token) tokenError = 'generate.php returned no token';
         } catch (e) {
             tokenError = e.message;
         }
@@ -429,6 +525,7 @@ if (require.main === module) {
     app.listen(PORT, () => {
         console.log(`foltynsrc API listening on http://localhost:${PORT}`);
         console.log(`  GET /          -> HTML search page`);
+        console.log(`  GET /proxy?url=<master.m3u8> -> direct-mode player (browser) / relay (non-browser)`);
         console.log(`  GET /api?id=1339713&naming=universe -> JSON playlist`);
         console.log(`  GET /health    -> health check`);
     });
