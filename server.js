@@ -529,7 +529,7 @@ async function movieApiHandler(req, res) {
 }
 
 function embedPlayerHandler(req, res) {
-    const tmdb = String(req.params.id || '').replace(/[^0-9]/g, '');
+    const tmdb = String(req.params.tmdb_id || '').replace(/[^0-9]/g, '');
     if (!tmdb) return res.status(400).type('html').send('<h1>Missing TMDB ID</h1>');
 
     const tmdbJson = JSON.stringify(tmdb);
@@ -537,13 +537,13 @@ function embedPlayerHandler(req, res) {
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Foltyn+ player</title>
 <style>
 * { box-sizing: border-box; }
-html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: #000; }
+html, body { width: 100%; height: 100%; height: 100dvh; margin: 0; overflow: hidden; background: #000; }
 body { display: grid; place-items: center; }
-.player { position: relative; width: 100vw; height: 100vh; background: #000; line-height: 0; }
+.player { position: fixed; inset: 0; width: 100vw; height: 100vh; height: 100dvh; background: #000; line-height: 0; }
 video { display: block; width: 100%; height: 100%; background: #000; object-fit: contain; outline: none; }
 .overlay { position: absolute; inset: 0; display: grid; place-items: center; padding: 24px; background: rgba(0,0,0,.8); color: #fff; font: 14px/1.4 Arial, sans-serif; text-align: center; }
 .overlay[hidden] { display: none; }
@@ -595,11 +595,7 @@ const hideOverlay = () => { overlay.hidden = true; };
 </html>`);
 }
 
-app.get('/api/movie/e/:id', (req, res) => {
-    const tmdb = String(req.params.id || '').replace(/[^0-9]/g, '');
-    if (!tmdb) return res.status(400).send('Missing TMDB ID');
-    res.redirect(`/player.html?id=${encodeURIComponent(tmdb)}`);
-});
+app.get('/api/movie/e/:tmdb_id', embedPlayerHandler);
 app.get(['/api', '/api/movie'], movieApiHandler);
 
 // Export for Vercel serverless (also runnable locally with `node server.js`)
