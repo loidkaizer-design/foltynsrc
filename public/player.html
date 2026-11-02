@@ -213,7 +213,7 @@ async function loadMovieId(id){
  if(!playlist.searchParams.has('token'))playlist.searchParams.append('token',token);
  loadHlsSource(relayUrl(playlist.href));
 }
-const params=new URLSearchParams(location.search),directUrl=params.get('url'),tmdbId=params.get('id');
+const params=new URLSearchParams(location.search),pathId=location.pathname.match(/^\/api\/movie\/e\/(\d+)\/?$/)?.[1],directUrl=params.get('url'),tmdbId=params.get('id')||pathId;
 if(directUrl){loadHlsSource(directUrl)}
 else if(tmdbId){loadMovieId(tmdbId).catch(error=>playbackError(error.message||'Unable to load this movie'))}
 else{playbackError('Missing HLS playlist URL or TMDB ID')}

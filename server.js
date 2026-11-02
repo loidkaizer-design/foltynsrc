@@ -529,70 +529,9 @@ async function movieApiHandler(req, res) {
 }
 
 function embedPlayerHandler(req, res) {
-    const tmdb = String(req.params.tmdb_id || '').replace(/[^0-9]/g, '');
-    if (!tmdb) return res.status(400).type('html').send('<h1>Missing TMDB ID</h1>');
-
-    const tmdbJson = JSON.stringify(tmdb);
-    res.type('html').send(`<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Foltyn+ player</title>
-<style>
-* { box-sizing: border-box; }
-html, body { width: 100%; height: 100%; height: 100dvh; margin: 0; overflow: hidden; background: #000; }
-body { display: grid; place-items: center; }
-.player { position: fixed; inset: 0; width: 100vw; height: 100vh; height: 100dvh; background: #000; line-height: 0; }
-video { display: block; width: 100%; height: 100%; background: #000; object-fit: contain; outline: none; }
-.overlay { position: absolute; inset: 0; display: grid; place-items: center; padding: 24px; background: rgba(0,0,0,.8); color: #fff; font: 14px/1.4 Arial, sans-serif; text-align: center; }
-.overlay[hidden] { display: none; }
-</style>
-</head>
-<body>
-<main class="player" aria-label="Foltyn+ video player">
-  <video id="video" controls playsinline preload="metadata"></video>
-  <div id="overlay" class="overlay" hidden><span id="message"></span></div>
-</main>
-<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
-<script>
-const tmdb = ${tmdbJson};
-const video = document.getElementById('video');
-const overlay = document.getElementById('overlay');
-const message = document.getElementById('message');
-const title = document.getElementById('title');
-const showError = (text) => { message.textContent = text; overlay.hidden = false; };
-const hideOverlay = () => { overlay.hidden = true; };
-(async () => {
-  try {
-    const response = await fetch('/api/movie?id=' + encodeURIComponent(tmdb), { headers: { accept: 'application/json' } });
-    const data = await response.json();
-    if (!response.ok || !data.success) throw new Error(data.error || 'Unable to load movie sources');
-    const source = (data.servers || []).find((server) => server.status === 'ready' && server.url);
-    if (!source) throw new Error('No playable source was returned');
-    const streamUrl = source.url;
-    video.addEventListener('playing', hideOverlay, { once: true });
-    video.addEventListener('error', () => showError('Playback error. Please try another source.'), { once: true });
-    if (video.canPlayType('application/vnd.apple.mpegurl')) {
-      video.src = streamUrl;
-    } else if (window.Hls && Hls.isSupported()) {
-      const hls = new Hls({ enableWorker: true });
-      hls.loadSource(streamUrl);
-      hls.attachMedia(video);
-      hls.on(Hls.Events.MANIFEST_PARSED, () => hideOverlay());
-      hls.on(Hls.Events.ERROR, (_event, details) => {
-        if (details.fatal) showError('Playback error. Please try another source.');
-      });
-    } else {
-      throw new Error('This browser does not support HLS playback');
-    }
-  } catch (error) {
-    showError(error instanceof Error ? error.message : 'Unable to load video');
-  }
-})();
-</script>
-</body>
-</html>`);
+    const tmdb = String(req.params.tmdb_id || '').trim();
+    if (!/^\d+$/.test(tmdb)) return res.status(400).type('html').send('<h1>Missing or invalid TMDB ID</h1>');
+    return res.sendFile('player.html', { root: __dirname + '/public' });
 }
 
 app.get('/api/movie/e/:tmdb_id', embedPlayerHandler);
