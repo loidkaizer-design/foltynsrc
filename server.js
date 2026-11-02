@@ -595,7 +595,11 @@ const hideOverlay = () => { overlay.hidden = true; };
 </html>`);
 }
 
-app.get('/api/movie/e/:id', embedPlayerHandler);
+app.get('/api/movie/e/:id', (req, res) => {
+    const tmdb = String(req.params.id || '').replace(/[^0-9]/g, '');
+    if (!tmdb) return res.status(400).send('Missing TMDB ID');
+    res.redirect(`/player.html?id=${encodeURIComponent(tmdb)}`);
+});
 app.get(['/api', '/api/movie'], movieApiHandler);
 
 // Export for Vercel serverless (also runnable locally with `node server.js`)
