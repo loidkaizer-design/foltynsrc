@@ -482,24 +482,38 @@ app.get('/', (_req, res) => {
 
 app.get('/proxy', proxyHls);
 
-app.get('/api', async (req, res) => {
+async function movieApiHandler(req, res) {
     const tmdb = req.query.id;
-    // Universe naming is the single supported presentation mode.
     const namingMode = 'universe';
     if (!tmdb) {
         return res.status(400).json({
             success: false,
             error: 'missing ?id=tmdb_id',
-            example: '/api?id=1339713&naming=universe',
+            example: '/api/movie?id=1339713',
         });
     }
     try {
         const result = await getPlaylist(String(tmdb), namingMode);
+        const forwardedProto = String(req.headers['x-forwarded-proto'] || 'http').split(',')[0];
+        const host = req.headers.host || 'foltynsrc.vercel.app';
+        const baseUrl = `${forwardedProto}://${host}`;
+        result.servers = result.servers.map((server) => ({
+            ...server,
+            // The browser mints the provider token after receiving this response.
+            // The proxy then mints its own relay token when the HLS URL is requested.
+            url: `${baseUrl}/proxy?url=${encodeURIComponent(server.raw)}`,
+            combined_url: `${baseUrl}/proxy?url=${encodeURIComponent(server.raw)}`,
+            token: null,
+            token_source: 'client-browser',
+            status: 'ready',
+        }));
         res.json(result);
     } catch (e) {
         res.status(502).json({ success: false, error: e.message, tmdb, naming_mode: namingMode });
     }
-});
+}
+
+app.get(['/api', '/api/movie'], movieApiHandler);
 
 // Export for Vercel serverless (also runnable locally with `node server.js`)
 if (require.main === module) {
