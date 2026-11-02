@@ -1,176 +1,500 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="color-scheme" content="dark">
-<title>Foltyn+ | Big Buck Bunny</title>
-<style>
-:root{--sprite:url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZlcnNpb249IjEuMSIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIHByZXNlcnZlQXNwZWN0UmF0aW89Im5vbmUiIHg9IjBweCIgeT0iMHB4IiB3aWR0aD0iMTIwcHgiIGhlaWdodD0iNDIwcHgiIHZpZXdCb3g9IjAgMCAxMjAgNDIwIj48ZGVmcz48ZmlsdGVyIGlkPSJGaWx0ZXJfMSIgeD0iLTIwJSIgeT0iLTIwJSIgd2lkdGg9IjE0MCUiIGhlaWdodD0iMTQwJSIgY29sb3ItaW50ZXJwb2xhdGlvbi1maWx0ZXJzPSJzUkdCIj48ZmVGbG9vZCBmbG9vZC1jb2xvcj0iIzAwMDAwMCIgZmxvb2Qtb3BhY2l0eT0iMC4yNDcwNTg4MjM1Mjk0MTE3OCIgaW49IlNvdXJjZUdyYXBoaWMiIHJlc3VsdD0icmVzdWx0MSIvPjxmZUNvbXBvc2l0ZSBpbjI9IlNvdXJjZUdyYXBoaWMiIGluPSJyZXN1bHQxIiBvcGVyYXRvcj0iaW4iIHJlc3VsdD0icmVzdWx0MiIvPjxmZUdhdXNzaWFuQmx1ciBpbj0icmVzdWx0MiIgc3RkRGV2aWF0aW9uPSIwLjY2NjY2NjY2NjY2NjY2NjYsMC42NjY2NjY2NjY2NjY2NjY2IiByZXN1bHQ9InJlc3VsdDMiLz48ZmVPZmZzZXQgZHg9IjYuMTIzMjMzOTk1NzM2NzY2ZS0xNyIgZHk9IjEiIGluPSJyZXN1bHQzIiByZXN1bHQ9InJlc3VsdDQiLz48ZmVDb21wb3NpdGUgaW4yPSJyZXN1bHQ0IiBpbj0iU291cmNlR3JhcGhpYyIgb3BlcmF0b3I9Im92ZXIiIHJlc3VsdD0icmVzdWx0NSIvPjwvZmlsdGVyPjxnIGlkPSJzcHJpdGVfMF9MYXllcjBfMF9GSUxMIj48cGF0aCBmaWxsPSIjRkZGRkZGIiBzdHJva2U9Im5vbmUiIGQ9Ik0gOC44NSAxNDYuMDVRIDguNDUgMTQ2LjEgOC4yNSAxNDYuNDUgOCAxNDYuNzUgOCAxNDcuMkwgOCAxNjIuNzVRIDggMTYzLjIgOC4yNSAxNjMuNTUgOC40NSAxNjMuODUgOC44NSAxNjMuOTUgOS4yNSAxNjQuMDUgOS42IDE2My44NUwgMjMuNCAxNTYuMVEgMjMuOCAxNTUuODUgMjMuOTUgMTU1LjQgMjQuMSAxNTUgMjMuOTUgMTU0LjU1IDIzLjggMTU0LjEgMjMuNCAxNTMuOUwgOS42IDE0Ni4xNVEgOS4yNSAxNDUuOSA4Ljg1IDE0Ni4wNU0gNDUuOCAyMTIuMTVRIDQ1LjgwNDY4NzUgMjEyLjU4NjUyMzQzNzUgNDYuMSAyMTIuODUgNDYuOTk0NzI2NTYyNSAyMTMuNzI3MTQ4NDM3NSA0NyAyMTQuOTUgNDYuOTk5NDE0MDYyNSAyMTYuMTkzNTU0Njg3NSA0Ni4xIDIxNy4xIDQ1LjgwMzUxNTYyNSAyMTcuMzg5MjU3ODEyNSA0NS44IDIxNy44IDQ1LjgwMzUxNTYyNSAyMTguMjEwNzQyMTg3NSA0Ni4xIDIxOC41IDQ2LjM4OTI1NzgxMjUgMjE4Ljc5NjQ4NDM3NSA0Ni44IDIxOC44IDQ3LjIxMDc0MjE4NzUgMjE4Ljc5NjQ4NDM3NSA0Ny41IDIxOC41IDQ5LjAwMDM5MDYyNSAyMTcuMDA2NjQwNjI1IDQ5IDIxNC45NSA0OS4wMDUyNzM0Mzc1IDIxMi44NzI4NTE1NjI1IDQ3LjUgMjExLjQgNDcuMTkzOTQ1MzEyNSAyMTEuMTQwNjI1IDQ2Ljc1IDIxMS4xNSA0Ni4zNjI1IDIxMS4xNTQ0OTIxODc1IDQ2LjA1IDIxMS40NSA0NS43ODk2NDg0Mzc1IDIxMS43NTU4NTkzNzUgNDUuOCAyMTIuMTVNIDQ4LjYgMjA5LjM1USA0OC42MDQ2ODc1IDIwOS43ODY1MjM0Mzc1IDQ4LjkgMjEwLjA1IDUwLjk5NDcyNjU2MjUgMjEyLjA3NzE0ODQzNzUgNTEgMjE0Ljk1IDUwLjk5OTYwOTM3NSAyMTcuODQzMzU5Mzc1IDQ4LjkgMjE5Ljk1IDQ4LjYwMzUxNTYyNSAyMjAuMjM5MjU3ODEyNSA0OC42IDIyMC42NSA0OC42MDM1MTU2MjUgMjIxLjA2MDc0MjE4NzUgNDguOSAyMjEuMzUgNDkuMTg5MjU3ODEyNSAyMjEuNjQ2NDg0Mzc1IDQ5LjYgMjIxLjY1IDUwLjAxMDc0MjE4NzUgMjIxLjY0NjQ4NDM3NSA1MC4zIDIyMS4zNSA1My4wMDA1ODU5Mzc1IDIxOC42NTY0NDUzMTI1IDUzIDIxNC45NSA1My4wMDUwNzgxMjUgMjExLjIyMjY1NjI1IDUwLjMgMjA4LjYgNDkuOTkzOTQ1MzEyNSAyMDguMzQwNjI1IDQ5LjU1IDIwOC4zNSA0OS4xNjI1IDIwOC4zNTQ0OTIxODc1IDQ4Ljg1IDIwOC42NSA0OC41ODk2NDg0Mzc1IDIwOC45NTU4NTkzNzUgNDguNiAyMDkuMzVNIDQzIDIwNlEgNDIuNTc3NzM0Mzc1IDIwNi4wMDIzNDM3NSA0Mi4yNSAyMDYuM0wgMzcuNiAyMTEgMzUgMjExUSAzNC41ODkyNTc4MTI1IDIxMS4wMDM1MTU2MjUgMzQuMyAyMTEuMyAzNC4wMDM1MTU2MjUgMjExLjU4OTI1NzgxMjUgMzQgMjEyTCAzNCAyMThRIDM0LjAwMzUxNTYyNSAyMTguNDEwNzQyMTg3NSAzNC4zIDIxOC43IDM0LjU4OTI1NzgxMjUgMjE4Ljk5NjQ4NDM3NSAzNSAyMTlMIDM3LjYgMjE5IDQyLjMgMjIzLjdRIDQyLjU4OTI1NzgxMjUgMjIzLjk5NjQ4NDM3NSA0MyAyMjQgNDMuNDEwNzQyMTg3NSAyMjMuOTk2NDg0Mzc1IDQzLjcgMjIzLjcgNDMuOTk2NDg0Mzc1IDIyMy40MTA3NDIxODc1IDQ0IDIyM0wgNDQgMjA3USA0My45OTgyNDIxODc1IDIwNi41ODk0NTMxMjUgNDMuNyAyMDYuMyA0My40MDg1OTM3NSAyMDYuMDAxNTYyNSA0MyAyMDZNIDUzLjEgMjA1LjhRIDUyLjc5Mzk0NTMxMjUgMjA1LjU0MDYyNSA1Mi4zNSAyMDUuNTUgNTEuOTYyNSAyMDUuNTU0NDkyMTg3NSA1MS42NSAyMDUuODUgNTEuMzg5NjQ4NDM3NSAyMDYuMTU1ODU5Mzc1IDUxLjQgMjA2LjU1IDUxLjQwNDY4NzUgMjA2Ljk4NjUyMzQzNzUgNTEuNyAyMDcuMjUgNTQuOTk0NzI2NTYyNSAyMTAuNDI3MTQ4NDM3NSA1NSAyMTQuOTUgNTUuMDAyOTI5Njg3NSAyMTkuNDkzOTQ1MzEyNSA1MS43NSAyMjIuOCA1MS40NTM1MTU2MjUgMjIzLjA5MTc5Njg3NSA1MS40NSAyMjMuNSA1MS40NTM3MTA5Mzc1IDIyMy45MTA1NDY4NzUgNTEuNzUgMjI0LjIgNTIuMDQxNDA2MjUgMjI0LjQ5NzA3MDMxMjUgNTIuNDUgMjI0LjUgNTIuODU5OTYwOTM3NSAyMjQuNDk1NzAzMTI1IDUzLjE1IDIyNC4yIDU2Ljk5NzA3MDMxMjUgMjIwLjMwNTg1OTM3NSA1NyAyMTQuOTUgNTcuMDA1MDc4MTI1IDIwOS41NzI2NTYyNSA1My4xIDIwNS44TSA0Ni4wNSAxODEuNDVRIDQ1Ljc4OTY0ODQzNzUgMTgxLjc1NTg1OTM3NSA0NS44IDE4Mi4xNSA0NS44MDQ2ODc1IDE4Mi41ODY1MjM0Mzc1IDQ2LjEgMTgyLjg1IDQ2Ljk5NDcyNjU2MjUgMTgzLjcyNzE0ODQzNzUgNDcgMTg0Ljk1IDQ2Ljk5OTQxNDA2MjUgMTg2LjE5MzU1NDY4NzUgNDYuMSAxODcuMSA0NS44MDM1MTU2MjUgMTg3LjM4OTI1NzgxMjUgNDUuOCAxODcuOCA0NS44MDM1MTU2MjUgMTg4LjIxMDc0MjE4NzUgNDYuMSAxODguNSA0Ni4zODkyNTc4MTI1IDE4OC43OTY0ODQzNzUgNDYuOCAxODguOCA0Ny4yMTA3NDIxODc1IDE4OC43OTY0ODQzNzUgNDcuNSAxODguNSA0OS4wMDAzOTA2MjUgMTg3LjAwNjY0MDYyNSA0OSAxODQuOTUgNDkuMDA1MjczNDM3NSAxODIuODcyODUxNTYyNSA0Ny41IDE4MS40IDQ3LjE5Mzk0NTMxMjUgMTgxLjE0MDYyNSA0Ni43NSAxODEuMTUgNDYuMzYyNSAxODEuMTU0NDkyMTg3NSA0Ni4wNSAxODEuNDVNIDUwLjMgMTc4LjZRIDQ5Ljk5Mzk0NTMxMjUgMTc4LjM0MDYyNSA0OS41NSAxNzguMzUgNDkuMTYyNSAxNzguMzU0NDkyMTg3NSA0OC44NSAxNzguNjUgNDguNTg5NjQ4NDM3NSAxNzguOTU1ODU5Mzc1IDQ4LjYgMTc5LjM1IDQ4LjYwNDY4NzUgMTc5Ljc4NjUyMzQzNzUgNDguOSAxODAuMDUgNTAuOTk0NzI2NTYyNSAxODIuMDc3MTQ4NDM3NSA1MSAxODQuOTUgNTAuOTk5NjA5Mzc1IDE4Ny44NDMzNTkzNzUgNDguOSAxODkuOTUgNDguNjAzNTE1NjI1IDE5MC4yMzkyNTc4MTI1IDQ4LjYgMTkwLjY1IDQ4LjYwMzUxNTYyNSAxOTEuMDYwNzQyMTg3NSA0OC45IDE5MS4zNSA0OS4xODkyNTc4MTI1IDE5MS42NDY0ODQzNzUgNDkuNiAxOTEuNjUgNTAuMDEwNzQyMTg3NSAxOTEuNjQ2NDg0Mzc1IDUwLjMgMTkxLjM1IDUzLjAwMDU4NTkzNzUgMTg4LjY1NjQ0NTMxMjUgNTMgMTg0Ljk1IDUzLjAwNTA3ODEyNSAxODEuMjIyNjU2MjUgNTAuMyAxNzguNk0gNDcuNSAxNTEuNFEgNDcuMTkzOTQ1MzEyNSAxNTEuMTQwNjI1IDQ2Ljc1IDE1MS4xNSA0Ni4zNjI1IDE1MS4xNTQ0OTIxODc1IDQ2LjA1IDE1MS40NSA0NS43ODk2NDg0Mzc1IDE1MS43NTU4NTkzNzUgNDUuOCAxNTIuMTUgNDUuODA0Njg3NSAxNTIuNTg2NTIzNDM3NSA0Ni4xIDE1Mi44NSA0Ni45OTQ3MjY1NjI1IDE1My43MjcxNDg0Mzc1IDQ3IDE1NC45NSA0Ni45OTk0MTQwNjI1IDE1Ni4xOTM1NTQ2ODc1IDQ2LjEgMTU3LjEgNDUuODAzNTE1NjI1IDE1Ny4zODkyNTc4MTI1IDQ1LjggMTU3LjggNDUuODAzNTE1NjI1IDE1OC4yMTA3NDIxODc1IDQ2LjEgMTU4LjUgNDYuMzg5MjU3ODEyNSAxNTguNzk2NDg0Mzc1IDQ2LjggMTU4LjggNDcuMjEwNzQyMTg3NSAxNTguNzk2NDg0Mzc1IDQ3LjUgMTU4LjUgNDkuMDAwMzkwNjI1IDE1Ny4wMDY2NDA2MjUgNDkgMTU0Ljk1IDQ5LjAwNTI3MzQzNzUgMTUyLjg3Mjg1MTU2MjUgNDcuNSAxNTEuNE0gMzcuNiAxODFMIDM1IDE4MVEgMzQuNTg5MjU3ODEyNSAxODEuMDAzNTE1NjI1IDM0LjMgMTgxLjMgMzQuMDAzNTE1NjI1IDE4MS41ODkyNTc4MTI1IDM0IDE4MkwgMzQgMTg4USAzNC4wMDM1MTU2MjUgMTg4LjQxMDc0MjE4NzUgMzQuMyAxODguNyAzNC41ODkyNTc4MTI1IDE4OC45OTY0ODQzNzUgMzUgMTg5TCAzNy42IDE4OSA0Mi4zIDE5My43USA0Mi41ODkyNTc4MTI1IDE5My45OTY0ODQzNzUgNDMgMTk0IDQzLjQxMDc0MjE4NzUgMTkzLjk5NjQ4NDM3NSA0My43IDE5My43IDQzLjk5NjQ4NDM3NSAxOTMuNDEwNzQyMTg3NSA0NCAxOTNMIDQ0IDE3N1EgNDMuOTk4MjQyMTg3NSAxNzYuNTg5NDUzMTI1IDQzLjcgMTc2LjMgNDMuNDA4NTkzNzUgMTc2LjAwMTU2MjUgNDMgMTc2IDQyLjU3NzczNDM3NSAxNzYuMDAyMzQzNzUgNDIuMjUgMTc2LjNMIDM3LjYgMTgxTSA0MyAxNDZRIDQyLjU3NzczNDM3NSAxNDYuMDAyMzQzNzUgNDIuMjUgMTQ2LjNMIDM3LjYgMTUxIDM1IDE1MVEgMzQuNTg5MjU3ODEyNSAxNTEuMDAzNTE1NjI1IDM0LjMgMTUxLjMgMzQuMDAzNTE1NjI1IDE1MS41ODkyNTc4MTI1IDM0IDE1MkwgMzQgMTU4USAzNC4wMDM1MTU2MjUgMTU4LjQxMDc0MjE4NzUgMzQuMyAxNTguNyAzNC41ODkyNTc4MTI1IDE1OC45OTY0ODQzNzUgMzUgMTU5TCAzNy42IDE1OSA0Mi4zIDE2My43USA0Mi41ODkyNTc4MTI1IDE2My45OTY0ODQzNzUgNDMgMTY0IDQzLjQxMDc0MjE4NzUgMTYzLjk5NjQ4NDM3NSA0My43IDE2My43IDQzLjk5NjQ4NDM3NSAxNjMuNDEwNzQyMTg3NSA0NCAxNjNMIDQ0IDE0N1EgNDMuOTk4MjQyMTg3NSAxNDYuNTg5NDUzMTI1IDQzLjcgMTQ2LjMgNDMuNDA4NTkzNzUgMTQ2LjAwMTU2MjUgNDMgMTQ2TSA0NCAxMTdRIDQzLjk5ODI0MjE4NzUgMTE2LjU4OTQ1MzEyNSA0My43IDExNi4zIDQzLjQwODU5Mzc1IDExNi4wMDE1NjI1IDQzIDExNiA0Mi41Nzc3MzQzNzUgMTE2LjAwMjM0Mzc1IDQyLjI1IDExNi4zTCAzNy42IDEyMSAzNSAxMjFRIDM0LjU4OTI1NzgxMjUgMTIxLjAwMzUxNTYyNSAzNC4zIDEyMS4zIDM0LjAwMzUxNTYyNSAxMjEuNTg5MjU3ODEyNSAzNCAxMjJMIDM0IDEyOFEgMzQuMDAzNTE1NjI1IDEyOC40MTA3NDIxODc1IDM0LjMgMTI4LjcgMzQuNTg5MjU3ODEyNSAxMjguOTk2NDg0Mzc1IDM1IDEyOUwgMzcuNiAxMjkgNDIuMyAxMzMuN1EgNDIuNTg5MjU3ODEyNSAxMzMuOTk2NDg0Mzc1IDQzIDEzNCA0My40MTA3NDIxODc1IDEzMy45OTY0ODQzNzUgNDMuNyAxMzMuNyA0My45OTY0ODQzNzUgMTMzLjQxMDc0MjE4NzUgNDQgMTMzTCA0NCAxMTdNIDQ2LjMgMTIxLjNRIDQ2LjAwMzUxNTYyNSAxMjEuNTg5MjU3ODEyNSA0NiAxMjIgNDYuMDAzNTE1NjI1IDEyMi40MTA3NDIxODc1IDQ2LjMgMTIyLjdMIDQ4LjYgMTI1IDQ2LjMgMTI3LjNRIDQ2LjAwMzUxNTYyNSAxMjcuNTg5MjU3ODEyNSA0NiAxMjggNDYuMDAzNTE1NjI1IDEyOC40MTA3NDIxODc1IDQ2LjMgMTI4LjcgNDYuNTg5MjU3ODEyNSAxMjguOTk2NDg0Mzc1IDQ3IDEyOSA0Ny40MTA3NDIxODc1IDEyOC45OTY0ODQzNzUgNDcuNyAxMjguN0wgNTAgMTI2LjQgNTIuMyAxMjguNjVRIDUyLjU4OTI1NzgxMjUgMTI4Ljk0NjQ4NDM3NSA1MyAxMjguOTUgNTMuNDEwNzQyMTg3NSAxMjguOTQ2NDg0Mzc1IDUzLjcgMTI4LjY1IDUzLjk5NjQ4NDM3NSAxMjguMzYwNzQyMTg3NSA1NCAxMjcuOTUgNTMuOTk2NDg0Mzc1IDEyNy41MzkyNTc4MTI1IDUzLjcgMTI3LjI1TCA1MS40IDEyNSA1My43IDEyMi43NVEgNTMuOTk1NTA3ODEyNSAxMjIuNDg1NzQyMTg3NSA1NCAxMjIuMDUgNTQuMDEwMTU2MjUgMTIxLjY1NTI3MzQzNzUgNTMuNyAxMjEuMzUgNTMuNDM2OTE0MDYyNSAxMjEuMDU0Mjk2ODc1IDUzIDEyMS4wNSA1Mi42MDUyNzM0Mzc1IDEyMS4wNDA4MjAzMTI1IDUyLjMgMTIxLjNMIDUwIDEyMy42IDQ3LjcgMTIxLjNRIDQ3LjQxMDc0MjE4NzUgMTIxLjAwMzUxNTYyNSA0NyAxMjEgNDYuNTg5MjU3ODEyNSAxMjEuMDAzNTE1NjI1IDQ2LjMgMTIxLjNNIDIxLjM1IDExOC42TCAyMS4zNSAxMTguNTVRIDE4LjcwODU5Mzc1IDExNS45OTUzMTI1IDE1IDExNiAxMS43NzA4OTg0Mzc1IDExNS45OTU4OTg0Mzc1IDkuMzUgMTE3Ljk1TCA3LjcgMTE2LjNRIDcuNDEwNzQyMTg3NSAxMTYuMDAzNTE1NjI1IDcgMTE2IDYuNTg5MjU3ODEyNSAxMTYuMDAzNTE1NjI1IDYuMyAxMTYuMyA2LjAwMzUxNTYyNSAxMTYuNTg5MjU3ODEyNSA2IDExN0wgNiAxMjJRIDYuMDAzNTE1NjI1IDEyMi40MTA3NDIxODc1IDYuMyAxMjIuNyA2LjU4OTI1NzgxMjUgMTIyLjk5NjQ4NDM3NSA3IDEyM0wgMTIgMTIzUSAxMi40MTA3NDIxODc1IDEyMi45OTY0ODQzNzUgMTIuNyAxMjIuNyAxMi45OTY0ODQzNzUgMTIyLjQxMDc0MjE4NzUgMTMgMTIyIDEyLjk5NjQ4NDM3NSAxMjEuNTg5MjU3ODEyNSAxMi43IDEyMS4zTCAxMC43NSAxMTkuMzVRIDEyLjYwNjgzNTkzNzUgMTE4LjAwMzcxMDkzNzUgMTUgMTE4IDE3Ljg5MTIxMDkzNzUgMTE4LjAwNDQ5MjE4NzUgMTkuOTUgMTIwTCAxOS45NSAxMjBRIDIyLjAwNDg4MjgxMjUgMTIyLjA2MTkxNDA2MjUgMjIgMTI1IDIyLjAwMjUzOTA2MjUgMTI3Ljg5MDQyOTY4NzUgMTkuOTUgMTI5Ljk1IDE3Ljg5MDQyOTY4NzUgMTMyLjAwMjUzOTA2MjUgMTUgMTMyIDEyLjEwOTU3MDMxMjUgMTMyLjAwMjUzOTA2MjUgMTAuMDUgMTI5Ljk1IDguNjYwMTU2MjUgMTI4LjU1NzIyNjU2MjUgOC4yIDEyNi43NSA4LjEyNzczNDM3NSAxMjYuMzcwNTA3ODEyNSA3Ljc1IDEyNi4xNSA3LjQyMzQzNzUgMTI1LjkzMDI3MzQzNzUgNyAxMjYgNi42MjAxMTcxODc1IDEyNi4xMjIwNzAzMTI1IDYuNCAxMjYuNDUgNi4xODA0Njg3NSAxMjYuODI2MTcxODc1IDYuMjUgMTI3LjIgNi44Mzk4NDM3NSAxMjkuNTQyNTc4MTI1IDguNjUgMTMxLjM1IDExLjI5MDQyOTY4NzUgMTMzLjk5NzQ2MDkzNzUgMTUgMTM0IDE4LjcwOTU3MDMxMjUgMTMzLjk5NzQ2MDkzNzUgMjEuMzUgMTMxLjM1IDIzLjk5NzQ2MDkzNzUgMTI4LjcwOTU3MDMxMjUgMjQgMTI1IDIzLjk5NTMxMjUgMTIxLjIzODI4MTI1IDIxLjM1IDExOC42TSA3NyAxODdMIDc3IDE5NCA3OSAxOTQgNzkgMTg5IDg0IDE4OSA4NCAxODcgNzcgMTg3TSA2NiAxODdMIDY2IDE4OSA3MSAxODkgNzEgMTk0IDczIDE5NCA3MyAxODcgNjYgMTg3TSA3MyAxNzZMIDcxIDE3NiA3MSAxODEgNjYgMTgxIDY2IDE4MyA3MyAxODMgNzMgMTc2TSA3OSAxNzZMIDc3IDE3NiA3NyAxODMgODQgMTgzIDg0IDE4MSA3OSAxODEgNzkgMTc2TSA3NyAxNjJMIDc3IDE2NCA4MiAxNjRRIDgyLjg1IDE2NCA4My40NSAxNjMuNDUgODQgMTYyLjg1IDg0IDE2MkwgODQgMTU3IDgyIDE1NyA4MiAxNjIgNzcgMTYyTSA2OCAxNTdMIDY2IDE1NyA2NiAxNjJRIDY2IDE2Mi44NSA2Ni42IDE2My40NSA2Ny4xNSAxNjQgNjggMTY0TCA3MyAxNjQgNzMgMTYyIDY4IDE2MiA2OCAxNTdLIDEzIDE3OFEgMTMgMTc3LjYgMTIuNyAxNzcuMyAxMi40IDE3NyAxMiAxNzdMIDEwIDE3N1EgOS42IDE3NyA5LjMgMTc3LjMgOSAxNzcuNiA5IDE3OEwgOSAxOTJRIDkgMTkyLjQgOS4zIDE5Mi43IDkuNiAxOTMgMTAgMTkzTCAxMiAxOTNRIDEyLjQgMTkzIDEyLjcgMTkyLjcgMTMgMTkyLjQgMTMgMTkyTCAxMyAxNzhNIDE5IDE3N1EgMTguNiAxNzcgMTguMyAxNzcuMyAxOCAxNzcuNiAxOCAxNzhMIDE4IDE5MlEgMTggMTkyLjQgMTguMyAxOTIuNyAxOC42IDE5MyAxOSAxOTNMIDIxIDE5M1EgMjEuNCAxOTMgMjEuNyAxOTIuNyAyMiAxOTIuNCAyMiAxOTJMIDIyIDE3OFEgMjIgMTc3LjYgMjEuNyAxNzcuMyAyMS40IDE3NyAyMSAxNzdMIDE5IDE3N00gNzcgMTQ2TCA3NyAxNDggODIgMTQ4IDgyIDE1MyA4NCAxNTMgODQgMTQ4USA4NCAxNDcuMTUgODMuNDUgMTQ2LjYgODIuODUgMTQ2IDgyIDE0NkwgNzcgMTQ2TSA2Ni42IDE0Ni42USA2NiAxNDcuMTUgNjYgMTQ4TCA2NiAxNTMgNjggMTUzIDY4IDE0OCA3MyAxNDggNzMgMTQ2IDY4IDE0NlEgNjcuMTUgMTQ2IDY2LjYgMTQ2LjZNIDY2LjUgMTE1LjFMIDY1LjEgMTE2LjUgNzMuNiAxMjUgNjUuMSAxMzMuNSA2Ni41IDEzNC45IDc1IDEyNi40IDgzLjUgMTM0LjkgODQuOSAxMzMuNSA3Ni40IDEyNSA4NC45IDExNi41IDgzLjUgMTE1LjEgNzUgMTIzLjYgNjYuNSAxMTUuMU0gMCAzNTBRIDAgMzcwLjcgMTQuNjUgMzg1LjM1IDI5LjMgNDAwIDUwIDQwMCA3MC43IDQwMCA4NS4zNSAzODUuMzUgMTAwIDM3MC43IDEwMCAzNTAgMTAwIDMyOS4zIDg1LjM1IDMxNC42NSA3MC43IDMwMCA1MCAzMDAgMjkuMyAzMDAgMTQuNjUgMzE0LjY1IDAgMzI5LjMgMCAzNTBNIDE3LjUgMzgyLjVRIDQgMzY5LjA1IDQgMzUwIDQgMzMwLjk1IDE3LjUgMzE3LjUgMzAuOTUgMzA0IDUwIDMwNCA2OS4wNSAzMDQgODIuNSAzMTcuNSA5NiAzMzAuOTUgOTYgMzUwIDk2IDM2OS4wNSA4Mi41IDM4Mi41IDY5LjA1IDM5NiA1MCAzOTYgMzAuOTUgMzk2IDE3LjUgMzgyLjVNIDQ1LjQgMzQ1LjRRIDQ2IDM0NC44IDQ2IDM0NCA0NiAzNDMuMiA0NS40IDM0Mi42TCA0MS42IDMzOC44USA0NS4yIDMzNiA1MCAzMzYgNTUuOCAzMzYgNTkuOSAzNDAuMUwgNTkuOSAzNDBRIDY0IDM0NC4xIDY0IDM1MCA2NCAzNTUuOCA1OS45IDM1OS45IDU1LjggMzY0IDUwIDM2NCA0NC4yIDM2NCA0MC4xIDM1OS45IDM3LjMgMzU3LjEgMzYuNSAzNTMuNiAzNi4zIDM1Mi43IDM1LjYgMzUyLjMgMzQuOCAzNTEuOSAzNC4xIDM1Mi4xIDMzLjIgMzUyLjIgMzIuOCAzNTMgMzIuNCAzNTMuNyAzMi42IDM1NC41IDMzLjcgMzU5LjEgMzcuMyAzNjIuNyA0Mi42IDM2OCA1MCAzNjggNTcuNCAzNjggNjIuNyAzNjIuNyA2OCAzNTcuNCA2OCAzNTAgNjggMzQyLjUgNjIuNyAzMzcuMiA1Ny40IDMzMiA1MCAzMzIgNDMuNSAzMzIgMzguNyAzMzUuOUwgMzUuNCAzMzIuNlEgMzQuOCAzMzIgMzQgMzMyIDMzLjIgMzMyIDMyLjYgMzMyLjYgMzIgMzMzLjIgMzIgMzM0TCAzMiAzNDRRIDMyIDM0NC44IDMyLjYgMzQ1LjQgMzMuMiAzNDYgMzQgMzQ2TCA0NCAzNDZRIDQ0LjggMzQ2IDQ1LjQgMzQ1LjRNIDgzLjY1IDg2Ljk1USA4NC41MjY3NTc4MTI1IDg2LjE3MzI0MjE4NzUgODUuMzUgODUuMzUgMTAwIDcwLjcgMTAwIDUwIDEwMCAyOS4zIDg1LjM1IDE0LjY1IDcwLjcgMCA1MCAwIDI5LjMgMCAxNC42NSAxNC42NSAwIDI5LjMgMCA1MCAwIDcwLjcgMTQuNjUgODUuMzUgMTUuNDczMjQyMTg3NSA4Ni4xNzMyNDIxODc1IDE2LjMgODYuOTUgMzAuNDYzMjgxMjUgMTAwIDUwIDEwMCA2OS41MzY3MTg3NSAxMDAgODMuNjUgODYuOTVNIDk2IDUwUSA5NiA2OS4wNSA4Mi41IDgyLjUgODAuMDYyMTA5Mzc1IDg0Ljk0NzA3MDMxMjUgNzcuNDUgODYuOTUgNjUuNTk3MDcwMzEyNSA5NiA1MCA5NiAzNC40MDI5Mjk2ODc1IDk2IDIyLjU1IDg2Ljk1IDE5LjkzNzg5MDYyNSA4NC45NDcwNzAzMTI1IDE3LjUgODIuNSA0IDY5LjA1IDQgNTAgNCAzMC45NSAxNy41IDE3LjUgMzAuOTUgNCA1MCA0IDY5LjA1IDQgODIuNSAxNy41IDk2IDMwLjk1IDk2IDUwTSA2OS44NSA0OS4xNVEgNjkuNTUgNDguMjUgNjguOCA0Ny44NUwgNDEuMTUgMzIuM1EgNDAuNDUgMzEuODUgMzkuNyAzMi4xIDM4LjkgMzIuMjUgMzguNDUgMzIuOTUgMzggMzMuNTUgMzggMzQuNDVMIDM4IDY1LjU1USAzOCA2Ni40IDM4LjQ1IDY3LjEgMzguOSA2Ny43NSAzOS43IDY3Ljk1IDQwLjQ1IDY4LjE1IDQxLjE1IDY3Ljc1TCA2OC44IDUyLjJRIDY5LjU1IDUxLjc1IDY5Ljg1IDUwLjg1IDcwLjE1IDUwIDY5Ljg1IDQ5LjE1IFoiLz48L2c+PC9kZWZzPjxnIGZpbHRlcj0idXJsKCNGaWx0ZXJfMSkiIHRyYW5zZm9ybT0ibWF0cml4KCAxLCAwLCAwLCAxLCAwLDApICI+PGcgdHJhbnNmb3JtPSJtYXRyaXgoIDEsIDAsIDAsIDEsIDEwLDEwKSAiPjxnIHRyYW5zZm9ybT0ibWF0cml4KCAxLCAwLCAwLCAxLCAwLDApICI+PHVzZSB4bGluazpocmVmPSIjc3ByaXRlXzBfTGF5ZXIwXzBfRklMTCIvPjwvZz48L2c+PC9nPjwvc3ZnPg==);--pip:url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9Ijk2IiBoZWlnaHQ9Ijk2IiBmaWxsPSIjZmZmIj48cGF0aCBkPSJNMTkgN2gtOHY2aDhWN1ptMi00SDNjLTEuMSAwLTIgLjktMiAydjE0YzAgMS4xLjkgMiAyIDJoMThjMS4xIDAgMi0uOSAyLTJWNWMwLTEuMS0uOS0yLTItMlptMCAxNkgzVjVoMTh2MTRabS0yLTFoLTh2LTZoOHY2WiIvPjwvc3ZnPg==);--cast:url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9Ijk2IiBoZWlnaHQ9Ijk2IiBmaWxsPSIjZmZmIj48cGF0aCBkPSJNMiAxOHYzaDNhMyAzIDAgMCAwLTMtM1ptMC01djNhNSA1IDAgMCAxIDUgNWgzYTggOCAwIDAgMC04LThabTAtNXYzYzUuNTIgMCAxMCA0LjQ4IDEwIDEwaDNDMTUgMTQuMTYgOS44NCA5IDIgOVptMTgtNUg0Yy0xLjEgMC0yIC45LTIgMnYxaDJWNmgxNnYxMmgtNnYyaDZjMS4xIDAgMi0uOSAyLTJWNmMwLTEuMS0uOS0yLTItMloiLz48L3N2Zz4=)}
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;height:100%;background:#333;font-family:Helvetica,Arial,sans-serif}
-.stage{min-height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:16px}
-.player{position:relative;width:min(960px,100%);max-height:calc(100vh - 70px);aspect-ratio:16/9;background:#000;box-shadow:0 1px 3px rgba(0,0,0,.5);overflow:hidden;outline:none;user-select:none;-webkit-user-select:none;opacity:0;transform:scale(.88);transition:opacity .25s linear,transform .25s ease-out}
-.player.ready{opacity:1;transform:none}
-.player:fullscreen{max-height:none;width:100%;height:100%;aspect-ratio:auto}
-.player::after{content:"";position:absolute;inset:0;box-shadow:inset 0 0 0 1px rgba(255,255,255,.05);pointer-events:none}
-video{position:absolute;inset:0;width:100%;height:100%;background:#000}
-.surface{position:absolute;inset:0;touch-action:manipulation}
-.player.hide{cursor:none}
-/* icons: every glyph comes from the Foltyn+ sprite / PiP / Cast SVGs */
-.ic{--k:1;--x:0;--y:0;--w:30;--h:30;display:block;width:calc(var(--w)*var(--k)*1px);height:calc(var(--h)*var(--k)*1px);background:var(--sprite) no-repeat;background-size:calc(120px*var(--k)) calc(420px*var(--k));background-position:calc(var(--x)*var(--k)*-1px) calc(var(--y)*var(--k)*-1px);pointer-events:none}
-.i-bigplay{--w:120;--h:120}.i-bigreplay{--y:300;--w:120;--h:120}
-.i-replay{--x:10;--y:120}.i-play{--x:10;--y:150}.i-pause{--x:10;--y:180}
-.i-v0{--x:40;--y:120}.i-v1{--x:40;--y:150}.i-v2{--x:40;--y:180}.i-v3{--x:40;--y:210}
-.i-fs{--x:70;--y:150}.i-fsx{--x:70;--y:180}
-.i-pip{background:var(--pip) center/20px 20px no-repeat}.i-cast{background:var(--cast) center/20px 20px no-repeat}
-.stack{position:relative;display:block;width:30px;height:30px}
-.stack .ic{position:absolute;left:0;top:0;opacity:0;transform:scale(.55);transition:opacity .18s linear,transform .24s cubic-bezier(.2,.9,.3,1.2)}
-.stack .ic.on{opacity:1;transform:none}
-/* controls */
-.controls{position:absolute;left:0;right:0;bottom:0;padding:0 8px 4px;background:linear-gradient(to top,rgba(0,0,0,.85),rgba(0,0,0,.45) 50%,transparent);transition:opacity .25s linear,transform .25s ease-out}
-.player.hide .controls{opacity:0;transform:translateY(8px);pointer-events:none}
-.prog{height:22px;display:flex;align-items:center;cursor:pointer;touch-action:none}
-.track{position:relative;width:100%;height:4px;background:rgba(255,255,255,.25);border-radius:2px;transition:height .1s}
-.prog:hover .track,.prog.drag .track{height:6px}
-.buf,.played{position:absolute;left:0;top:0;bottom:0;border-radius:2px;width:0}
-.buf{background:rgba(255,255,255,.3)}.played{background:#fff}
-.thumb{position:absolute;top:50%;left:0;width:12px;height:12px;margin:-6px 0 0 -6px;border-radius:50%;background:#fff;transform:scale(0);transition:transform .12s}
-.prog:hover .thumb,.prog.drag .thumb{transform:scale(1)}
-.row{display:flex;align-items:center;height:40px}
-.cb{all:unset;box-sizing:border-box;display:flex;align-items:center;justify-content:center;width:40px;height:40px;cursor:pointer;opacity:.75;transition:opacity .1s linear,transform .1s ease-out}
-.cb:hover,.cb.active{opacity:1}.cb:active{transform:scale(.9)}.cb:focus-visible{outline:2px solid #fff;outline-offset:-4px;border-radius:6px}
-.cb[hidden]{display:none}
-.vol{display:flex;align-items:center}
-.vol input{width:0;opacity:0;margin:0;accent-color:#fff;transition:width .2s,opacity .2s}
-.vol:hover input,.vol:focus-within input{width:72px;opacity:1;margin:0 8px 0 2px}
-@media(hover:none){.vol input{display:none}}
-.time{color:#fff;opacity:.85;font-size:12px;margin-left:8px;font-variant-numeric:tabular-nums;white-space:nowrap}
-.sp{flex:1}
-/* big button + center flash */
-.big{all:unset;position:absolute;left:50%;top:50%;width:132px;height:132px;margin:-66px 0 0 -66px;cursor:pointer;opacity:0;pointer-events:none;transition:opacity .15s linear,transform .1s}
-.big .stack{width:132px;height:132px}.big .ic{--k:1.1}
-.player.idle .big{opacity:.75;pointer-events:auto}.player.idle .big:hover{opacity:1}.big:active{transform:scale(.95)}
-.flash{position:absolute;left:50%;top:50%;width:0;height:0;pointer-events:none}
-.flash .ic{--k:2.2;position:absolute;left:0;top:0;opacity:0;transform:translate(-50%,-50%) scale(.5);filter:drop-shadow(0 2px 8px rgba(0,0,0,.6))}
-/* double-tap seek */
-.seek{position:absolute;top:0;bottom:0;width:38%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;overflow:hidden;pointer-events:none;opacity:0;background:rgba(255,255,255,.14);transition:opacity .2s}
-.seek.show{opacity:1}
-.seek-L{left:0;border-radius:0 50% 50% 0/0 100% 100% 0}.seek-R{right:0;border-radius:50% 0 0 50%/100% 0 0 100%}
-.arrows{display:flex}.arrows .ic{--k:.8;opacity:0}
-.seek-L .arrows{transform:scaleX(-1)}
-.lbl{color:#fff;font-size:15px;font-weight:600;text-shadow:0 1px 4px rgba(0,0,0,.6)}
-.ripple{position:absolute;width:140px;height:140px;margin:-70px 0 0 -70px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.55),rgba(255,255,255,.18) 60%,transparent 70%);pointer-events:none}
-.credit{margin:0;color:#aaa;font-size:12px}.credit a{color:#dedede}
-@media(prefers-reduced-motion:reduce){*{transition-duration:.01ms!important}}
-</style>
-<script>window.__onGCastApiAvailable=function(ok){if(ok&&window.FoltynCast)window.FoltynCast()}</script>
-<script async src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"></script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="dark">
+  <title>Foltyn+ Player</title>
+  <style>
+    :root {
+      --bg: #000;
+      --panel: rgba(0, 0, 0, 0.7);
+      --panel-edge: rgba(255,255,255,0.12);
+      --track: rgba(255,255,255,0.25);
+      --track-fill: rgba(255,255,255,0.9);
+      --accent: #fff;
+      --text: #fff;
+      --muted: rgba(255,255,255,0.8);
+    }
+
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      height: 100%;
+      background: #111;
+      font-family: Arial, Helvetica, sans-serif;
+      color: var(--text);
+    }
+
+    body {
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+    }
+
+    .player {
+      position: relative;
+      width: min(100vw, 960px);
+      height: min(100vh, 540px);
+      aspect-ratio: 16 / 9;
+      background: #000;
+      overflow: hidden;
+      box-shadow: 0 0 0 1px rgba(255,255,255,0.06);
+      outline: none;
+      user-select: none;
+    }
+
+    .player::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, rgba(0,0,0,0.8), rgba(0,0,0,0.25) 32%, transparent 58%);
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    video {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      background: #000;
+      display: block;
+    }
+
+    .big-play {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: 108px;
+      height: 108px;
+      border: 0;
+      border-radius: 50%;
+      background: rgba(0,0,0,0.28);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.2);
+      cursor: pointer;
+      z-index: 3;
+      transition: transform 0.12s ease, opacity 0.2s ease, background 0.2s;
+      opacity: 1;
+    }
+
+    .big-play:hover { background: rgba(0,0,0,0.34); }
+    .big-play:active { transform: translate(-50%, -50%) scale(0.96); }
+    .big-play.hidden { opacity: 0; pointer-events: none; }
+
+    .icon {
+      width: 26px;
+      height: 26px;
+      display: inline-block;
+      vertical-align: middle;
+      color: var(--text);
+      fill: currentColor;
+    }
+
+    .controls {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      padding: 0 10px 10px;
+      z-index: 4;
+      opacity: 1;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+
+    .player.hide-controls .controls {
+      opacity: 0;
+      transform: translateY(8px);
+      pointer-events: none;
+    }
+
+    .progress {
+      position: relative;
+      height: 18px;
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      margin-bottom: 8px;
+    }
+
+    .progress .track {
+      position: relative;
+      width: 100%;
+      height: 4px;
+      background: var(--track);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .progress .buffer,
+    .progress .played {
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 0%;
+      height: 100%;
+      border-radius: inherit;
+    }
+
+    .progress .buffer {
+      background: rgba(255,255,255,0.32);
+    }
+
+    .progress .played {
+      background: var(--track-fill);
+    }
+
+    .progress .thumb {
+      position: absolute;
+      left: 0%;
+      top: 50%;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #fff;
+      transform: translate(-50%, -50%);
+      box-shadow: 0 1px 2px rgba(0,0,0,0.3);
+    }
+
+    .row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 42px;
+    }
+
+    button.control {
+      background: transparent;
+      border: 0;
+      color: rgba(255,255,255,0.9);
+      padding: 8px;
+      border-radius: 8px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.12s ease, background 0.12s ease, opacity 0.12s ease;
+      opacity: 0.9;
+    }
+
+    button.control:hover { background: rgba(255,255,255,0.08); }
+    button.control:active { transform: scale(0.96); }
+
+    .volume-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .volume {
+      width: 0;
+      opacity: 0;
+      transition: width 0.2s ease, opacity 0.2s ease;
+      accent-color: #fff;
+    }
+
+    .volume-wrap:hover .volume,
+    .volume-wrap:focus-within .volume {
+      width: 78px;
+      opacity: 1;
+    }
+
+    .time {
+      min-width: 84px;
+      font-size: 12px;
+      color: var(--muted);
+      letter-spacing: 0.02em;
+    }
+
+    .spacer { flex: 1; }
+
+    .status {
+      position: absolute;
+      left: 16px;
+      bottom: 58px;
+      z-index: 4;
+      max-width: min(80%, 440px);
+      padding: 8px 10px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(0,0,0,0.38);
+      border-radius: 999px;
+      font-size: 12px;
+      color: rgba(255,255,255,0.82);
+      backdrop-filter: blur(5px);
+      opacity: 0;
+      transform: translateY(6px);
+      transition: opacity 0.2s ease, transform 0.2s ease;
+      pointer-events: none;
+    }
+
+    .status.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    @media (max-width: 620px) {
+      .player { width: 100vw; height: 100vh; }
+      .time { min-width: 72px; }
+      .volume-wrap:hover .volume,
+      .volume-wrap:focus-within .volume { width: 62px; }
+    }
+  </style>
 </head>
 <body>
-<main class="stage">
-<div class="player" id="p" tabindex="0" aria-label="Foltyn+ video player">
-  <video id="v" playsinline preload="metadata" aria-label="Big Buck Bunny"><source src="https://archive.org/download/BigBuckBunny_328/BigBuckBunny_512kb.mp4" type="video/mp4"></video>
-  <div class="surface" id="sf"></div>
-  <div class="seek seek-L" id="sL"><div class="arrows"><i class="ic i-play"></i><i class="ic i-play"></i><i class="ic i-play"></i></div><span class="lbl"></span></div>
-  <div class="seek seek-R" id="sR"><div class="arrows"><i class="ic i-play"></i><i class="ic i-play"></i><i class="ic i-play"></i></div><span class="lbl"></span></div>
-  <div class="flash" id="fl"><i class="ic i-play" data-f="play"></i><i class="ic i-pause" data-f="pause"></i></div>
-  <button class="big" id="big" aria-label="Play"><span class="stack"><i class="ic i-bigplay on"></i><i class="ic i-bigreplay"></i></span></button>
-  <div class="controls" id="ctl">
-    <div class="prog" id="prog" role="slider" aria-label="Seek" aria-valuemin="0" aria-valuenow="0"><div class="track"><div class="buf" id="buf"></div><div class="played" id="pl"></div><div class="thumb" id="th"></div></div></div>
-    <div class="row">
-      <button class="cb" id="pp" aria-label="Play"><span class="stack"><i class="ic i-play on"></i><i class="ic i-pause"></i><i class="ic i-replay"></i></span></button>
-      <div class="vol"><button class="cb" id="mute" aria-label="Mute"><span class="stack"><i class="ic i-v0"></i><i class="ic i-v1"></i><i class="ic i-v2"></i><i class="ic i-v3 on"></i></span></button><input id="vr" type="range" min="0" max="1" step="0.01" value="1" aria-label="Volume"></div>
-      <span class="time" id="tm">0:00 / 0:00</span><span class="sp"></span>
-      <button class="cb" id="pip" aria-label="Picture in Picture" hidden><i class="ic i-pip" style="width:30px;height:30px"></i></button>
-      <button class="cb" id="cast" aria-label="Cast to device" hidden><i class="ic i-cast" style="width:30px;height:30px"></i></button>
-      <button class="cb" id="fs" aria-label="Fullscreen"><span class="stack"><i class="ic i-fs on"></i><i class="ic i-fsx"></i></span></button>
+  <div class="player" id="player" tabindex="0">
+    <video id="video" playsinline preload="metadata"></video>
+
+    <button id="bigPlay" class="big-play" aria-label="Play video">
+      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor"></path></svg>
+    </button>
+
+    <div id="status" class="status" role="status" aria-live="polite"></div>
+
+    <div class="controls">
+      <div id="progress" class="progress" aria-label="Seek" role="slider" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" tabindex="0">
+        <div class="track">
+          <div id="buffer" class="buffer"></div>
+          <div id="played" class="played"></div>
+          <div id="thumb" class="thumb"></div>
+        </div>
+      </div>
+
+      <div class="row">
+        <button id="toggle" class="control" aria-label="Play">
+          <svg id="toggleIcon" class="icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M8 5v14l11-7z" fill="currentColor"></path>
+          </svg>
+        </button>
+
+        <div class="volume-wrap">
+          <button id="mute" class="control" aria-label="Mute">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M3 10v4h4l5 5V5L7 10H3zm12.5 2a4.5 4.5 0 0 0-2.5-4.03v8.06A4.5 4.5 0 0 0 15.5 12zm0-8.5a8.5 8.5 0 0 1 0 17v-2a6.5 6.5 0 0 0 0-13v-2z" fill="currentColor"></path>
+            </svg>
+          </button>
+          <input id="volume" class="volume" type="range" min="0" max="1" step="0.01" value="1" aria-label="Volume" />
+        </div>
+
+        <div id="time" class="time">0:00 / 0:00</div>
+        <div class="spacer"></div>
+
+        <button id="fullscreen" class="control" aria-label="Fullscreen">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M7 3H3v4h2V5h2V3zm12 0h-4v2h2v2h2V3zM3 17v4h4v-2H5v-2H3zm16 0v2h-2v2h4v-4h-2z" fill="currentColor"></path>
+          </svg>
+        </button>
+      </div>
     </div>
   </div>
-</div>
-<p class="credit">Big Buck Bunny by Blender Foundation · <a href="https://creativecommons.org/licenses/by/3.0/us/" target="_blank" rel="noopener noreferrer">CC BY 3.0</a></p>
-</main>
-<script>
-(()=>{
-const $=id=>document.getElementById(id),P=$('p'),v=$('v'),sf=$('sf');
-const SKIP=10,fmt=s=>{s=Math.max(0,s|0);const h=s/3600|0,m=(s%3600)/60|0,x=s%60;return(h?h+':'+String(m).padStart(2,'0'):m)+':'+String(x).padStart(2,'0')};
-const pick=(el,i)=>[...el.querySelectorAll('.ic')].forEach((n,k)=>n.classList.toggle('on',k===i));
-const clamp=(n,a,b)=>Math.min(b,Math.max(a,n));
-requestAnimationFrame(()=>P.classList.add('ready'));
-let started=false,hideT,raf;
-/* ---- controls visibility ---- */
-function poke(){P.classList.remove('hide');clearTimeout(hideT);if(!v.paused&&!scrub)hideT=setTimeout(()=>P.classList.add('hide'),2800)}
-['pointermove','pointerdown','keydown','focusin'].forEach(e=>P.addEventListener(e,poke));
-/* ---- play state ---- */
-function sync(){const idle=!started||v.ended;P.classList.toggle('idle',idle);
- pick($('pp'),v.ended?2:v.paused?0:1);pick($('big').firstElementChild,v.ended?1:0);
- $('pp').ariaLabel=$('big').ariaLabel=v.paused?'Play':'Pause';poke()}
-function toggle(){const play=v.paused||v.ended;if(v.ended)v.currentTime=0;play?v.play():v.pause();flashIcon(play?'play':'pause')}
-function flashIcon(n){const el=$('fl').querySelector(`[data-f=${n}]`);el.getAnimations().forEach(a=>a.cancel());
- el.animate([{opacity:0,transform:'translate(-50%,-50%) scale(.55)'},{opacity:1,offset:.3,transform:'translate(-50%,-50%) scale(1)'},{opacity:0,transform:'translate(-50%,-50%) scale(1.35)'}],{duration:620,easing:'cubic-bezier(.2,.8,.3,1)'})}
-v.addEventListener('play',()=>{started=true;sync();cancelAnimationFrame(raf);loop()});
-['pause','ended','loadedmetadata','emptied'].forEach(e=>v.addEventListener(e,()=>{sync();ui()}));
-$('pp').onclick=()=>toggle();
-$('big').onclick=()=>{if(v.ended)v.currentTime=0;v.play()};
-/* ---- progress ---- */
-let scrub=false;
-function ui(){const d=v.duration||0,t=v.currentTime,pct=d?t/d*100:0;$('pl').style.width=pct+'%';$('th').style.left=pct+'%';
- $('tm').textContent=fmt(t)+' / '+fmt(d);$('prog').setAttribute('aria-valuenow',t|0);$('prog').setAttribute('aria-valuemax',d|0)}
-function loop(){ui();if(!v.paused&&!v.ended)raf=requestAnimationFrame(loop)}
-v.addEventListener('timeupdate',ui);v.addEventListener('seeked',ui);
-v.addEventListener('progress',()=>{const b=v.buffered,t=v.currentTime;let e=0;for(let i=0;i<b.length;i++)if(b.start(i)<=t+.5)e=b.end(i);$('buf').style.width=(v.duration?e/v.duration*100:0)+'%'});
-const pr=$('prog');
-const at=e=>{const r=pr.getBoundingClientRect();if(v.duration)v.currentTime=clamp((e.clientX-r.left)/r.width,0,1)*v.duration;ui()};
-pr.addEventListener('pointerdown',e=>{scrub=true;pr.classList.add('drag');pr.setPointerCapture(e.pointerId);at(e)});
-pr.addEventListener('pointermove',e=>{if(scrub)at(e)});
-const endScrub=()=>{scrub=false;pr.classList.remove('drag');poke()};
-pr.addEventListener('pointerup',endScrub);pr.addEventListener('pointercancel',endScrub);
-/* ---- volume ---- */
-function vol(){const l=v.muted||v.volume===0?0:v.volume<.34?1:v.volume<.67?2:3;pick($('mute'),l);$('vr').value=v.muted?0:v.volume;$('mute').ariaLabel=l?'Mute':'Unmute'}
-v.addEventListener('volumechange',vol);
-$('mute').onclick=()=>{if(v.muted||v.volume===0){v.muted=false;if(v.volume===0)v.volume=.5}else v.muted=true};
-$('vr').oninput=e=>{v.muted=false;v.volume=+e.target.value};
-/* ---- PiP / fullscreen / cast ---- */
-if(document.pictureInPictureEnabled&&v.requestPictureInPicture){const b=$('pip');b.hidden=false;
- b.onclick=async()=>{try{document.pictureInPictureElement===v?await document.exitPictureInPicture():await v.requestPictureInPicture()}catch(e){console.warn(e)}};
- v.addEventListener('enterpictureinpicture',()=>b.classList.add('active'));v.addEventListener('leavepictureinpicture',()=>b.classList.remove('active'))}
-const fsEl=()=>document.fullscreenElement||document.webkitFullscreenElement;
-function fs(){if(fsEl())(document.exitFullscreen||document.webkitExitFullscreen).call(document);else if(P.requestFullscreen)P.requestFullscreen();else if(P.webkitRequestFullscreen)P.webkitRequestFullscreen();else if(v.webkitEnterFullscreen)v.webkitEnterFullscreen()}
-$('fs').onclick=fs;['fullscreenchange','webkitfullscreenchange'].forEach(e=>document.addEventListener(e,()=>pick($('fs'),fsEl()?1:0)));
-window.FoltynCast=()=>{const ctx=cast.framework.CastContext.getInstance();
- ctx.setOptions({receiverApplicationId:chrome.cast.media.DEFAULT_MEDIA_RECEIVER_APP_ID,autoJoinPolicy:chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED});
- const b=$('cast');b.hidden=false;
- b.onclick=async()=>{try{await ctx.requestSession();const s=ctx.getCurrentSession(),mi=new chrome.cast.media.MediaInfo(v.currentSrc,'video/mp4'),rq=new chrome.cast.media.LoadRequest(mi);rq.currentTime=v.currentTime;rq.autoplay=!v.paused;await s.loadMedia(rq);v.pause()}catch(e){console.warn('Cast:',e)}};
- ctx.addEventListener(cast.framework.CastContextEventType.SESSION_STATE_CHANGED,e=>b.classList.toggle('active',/STARTED|RESUMED/.test(e.sessionState)))};
-if(window.cast&&cast.framework)window.FoltynCast();
-/* ---- gestures ---- */
-const seekEl={L:$('sL'),R:$('sR')};
-let tap={z:null,t:0,timer:0},sk={z:null,total:0,t:0,hide:{L:0,R:0}};
-function seekBy(z,x,y){const now=Date.now(),chain=sk.z===z&&now-sk.t<700;sk.total=chain?sk.total+SKIP:SKIP;sk.z=z;sk.t=now;
- if(v.duration)v.currentTime=clamp(v.currentTime+(z==='R'?SKIP:-SKIP),0,v.duration);ui();
- const el=seekEl[z],r=el.getBoundingClientRect();el.classList.add('show');el.querySelector('.lbl').textContent=(z==='R'?'+':'-')+sk.total+'s';
- el.querySelectorAll('.arrows .ic').forEach((a,i)=>{a.getAnimations().forEach(n=>n.cancel());a.animate([{opacity:0},{opacity:1,offset:.45},{opacity:0}],{duration:520,delay:i*110,fill:'backwards'}).onfinish=()=>{}});
- const rp=document.createElement('div');rp.className='ripple';rp.style.left=(x-r.left)+'px';rp.style.top=(y-r.top)+'px';el.appendChild(rp);
- rp.animate([{transform:'scale(.15)',opacity:.9},{transform:'scale(2.6)',opacity:0}],{duration:650,easing:'cubic-bezier(.2,.7,.3,1)'}).onfinish=()=>rp.remove();
- clearTimeout(sk.hide[z]);sk.hide[z]=setTimeout(()=>el.classList.remove('show'),750);poke()}
-sf.addEventListener('pointerup',e=>{if(e.pointerType==='mouse'&&e.button!==0)return;
- const r=P.getBoundingClientRect(),x=e.clientX-r.left,z=x<r.width*.33?'L':x>r.width*.67?'R':'C',now=Date.now();
- if(z==='C'){clearTimeout(tap.timer);tap.z=null;toggle();return}
- const chain=sk.z===z&&now-sk.t<700;
- if(chain||(tap.z===z&&now-tap.t<300)){clearTimeout(tap.timer);tap.z=z;tap.t=now;seekBy(z,e.clientX,e.clientY);return}
- tap.z=z;tap.t=now;clearTimeout(tap.timer);
- tap.timer=setTimeout(()=>{tap.z=null;if(e.pointerType==='mouse')toggle();else if(P.classList.contains('hide')||v.paused)poke();else{clearTimeout(hideT);P.classList.add('hide')}},300)});
-sf.addEventListener('dblclick',e=>e.preventDefault());
-/* ---- keyboard ---- */
-P.addEventListener('keydown',e=>{const k=e.key.toLowerCase(),r=P.getBoundingClientRect();let h=true;
- if(k===' '||k==='k')toggle();
- else if(k==='arrowright'||k==='l'){const s=k==='l'?SKIP:5;v.currentTime=clamp(v.currentTime+s,0,v.duration||0);if(k==='l')seekBy('R',r.right-r.width*.15,r.top+r.height/2)}
- else if(k==='arrowleft'||k==='j'){const s=k==='j'?SKIP:5;v.currentTime=clamp(v.currentTime-s,0,v.duration||0);if(k==='j')seekBy('L',r.left+r.width*.15,r.top+r.height/2)}
- else if(k==='arrowup')v.volume=clamp(v.volume+.1,0,1);else if(k==='arrowdown')v.volume=clamp(v.volume-.1,0,1);
- else if(k==='m')$('mute').click();else if(k==='f')fs();else if(k==='p'&&!$('pip').hidden)$('pip').click();else h=false;
- if(h)e.preventDefault()});
-sync();vol();ui();
-})();
-</script>
+
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.20"></script>
+  <script>
+    (() => {
+      const player = document.getElementById('player');
+      const video = document.getElementById('video');
+      const bigPlay = document.getElementById('bigPlay');
+      const toggle = document.getElementById('toggle');
+      const toggleIcon = document.getElementById('toggleIcon');
+      const mute = document.getElementById('mute');
+      const volume = document.getElementById('volume');
+      const timeEl = document.getElementById('time');
+      const progressEl = document.getElementById('progress');
+      const bufferEl = document.getElementById('buffer');
+      const playedEl = document.getElementById('played');
+      const thumbEl = document.getElementById('thumb');
+      const statusEl = document.getElementById('status');
+      const fullscreenBtn = document.getElementById('fullscreen');
+
+      const FALLBACK_SRC = 'https://archive.org/download/BigBuckBunny_328/BigBuckBunny_512kb.mp4';
+      let hls = null;
+      let hideTimer = null;
+
+      const setStatus = (message) => {
+        statusEl.textContent = message || '';
+        statusEl.classList.toggle('show', !!message);
+      };
+
+      const formatTime = (seconds) => {
+        const safe = Number.isFinite(seconds) ? Math.max(0, Math.floor(seconds)) : 0;
+        const h = Math.floor(safe / 3600);
+        const m = Math.floor((safe % 3600) / 60);
+        const s = safe % 60;
+        if (h > 0) return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+        return `${m}:${String(s).padStart(2, '0')}`;
+      };
+
+      const updateToggleIcon = () => {
+        const isPlaying = !video.paused && !video.ended;
+        toggle.setAttribute('aria-label', isPlaying ? 'Pause' : 'Play');
+        toggleIcon.innerHTML = isPlaying
+          ? '<path d="M7 5h3v14H7zm7 0h3v14h-3z" fill="currentColor"></path>'
+          : '<path d="M8 5v14l11-7z" fill="currentColor"></path>';
+        bigPlay.classList.toggle('hidden', isPlaying);
+      };
+
+      const updateProgress = () => {
+        const duration = Number.isFinite(video.duration) && video.duration > 0 ? video.duration : 0;
+        const current = Number.isFinite(video.currentTime) ? video.currentTime : 0;
+        const pct = duration > 0 ? (current / duration) * 100 : 0;
+        const buffered = video.buffered && video.buffered.length ? video.buffered.end(video.buffered.length - 1) : 0;
+        const bufferPct = duration > 0 ? (buffered / duration) * 100 : 0;
+
+        playedEl.style.width = `${pct}%`;
+        thumbEl.style.left = `${pct}%`;
+        bufferEl.style.width = `${bufferPct}%`;
+        progressEl.setAttribute('aria-valuenow', String(Math.round(pct)));
+        timeEl.textContent = `${formatTime(current)} / ${formatTime(duration)}`;
+      };
+
+      const pokeControls = () => {
+        player.classList.remove('hide-controls');
+        clearTimeout(hideTimer);
+        if (!video.paused) {
+          hideTimer = setTimeout(() => player.classList.add('hide-controls'), 2500);
+        }
+      };
+
+      const togglePlayback = async () => {
+        try {
+          if (video.paused) {
+            await video.play();
+          } else {
+            video.pause();
+          }
+        } catch (err) {
+          console.warn('Playback toggle failed:', err);
+        }
+      };
+
+      const attachHls = (src) => {
+        if (window.Hls && Hls.isSupported()) {
+          if (hls) hls.destroy();
+          hls = new Hls({
+            maxBufferLength: 30,
+            backBufferLength: 90,
+            maxBufferSize: 60 * 1000 * 1000
+          });
+          hls.loadSource(src);
+          hls.attachMedia(video);
+          hls.on(Hls.Events.ERROR, (event, data) => {
+            if (data.fatal) {
+              console.error('HLS fatal error:', data);
+              setStatus('Playback error. Try another source.');
+            }
+          });
+          hls.on(Hls.Events.MANIFEST_PARSED, () => {
+            video.play().catch(() => {});
+          });
+        } else {
+          video.src = src;
+        }
+      };
+
+      const loadSource = async () => {
+        const params = new URLSearchParams(window.location.search);
+        const tmdbId = params.get('id');
+
+        if (!tmdbId) {
+          video.src = FALLBACK_SRC;
+          setStatus('No movie ID supplied; using fallback test stream.');
+          return;
+        }
+
+        setStatus('Loading movie source…');
+
+        try {
+          const response = await fetch(`/api/movie?id=${encodeURIComponent(tmdbId)}`);
+          const payload = await response.json();
+
+          if (!response.ok || !payload.success) {
+            throw new Error(payload?.error || `Request failed (${response.status})`);
+          }
+
+          const source = (payload.servers || []).find((server) => server.status === 'ready' && server.url)?.url;
+          if (!source) throw new Error('No playable source was returned.');
+
+          attachHls(source);
+          setStatus('');
+        } catch (error) {
+          console.error('Movie fetch failed:', error);
+          video.src = FALLBACK_SRC;
+          setStatus('Source unavailable — using fallback test stream.');
+        }
+      };
+
+      video.addEventListener('play', () => updateToggleIcon());
+      video.addEventListener('pause', () => updateToggleIcon());
+      video.addEventListener('ended', () => updateToggleIcon());
+      video.addEventListener('timeupdate', updateProgress);
+      video.addEventListener('loadedmetadata', updateProgress);
+      video.addEventListener('progress', updateProgress);
+      video.addEventListener('volumechange', () => {
+        volume.value = String(video.volume);
+      });
+      video.addEventListener('error', () => {
+        setStatus('Playback error — trying fallback stream.');
+        if (video.currentSrc !== FALLBACK_SRC) {
+          video.src = FALLBACK_SRC;
+        }
+      });
+
+      toggle.addEventListener('click', togglePlayback);
+      bigPlay.addEventListener('click', togglePlayback);
+      mute.addEventListener('click', () => {
+        video.muted = !video.muted;
+      });
+      volume.addEventListener('input', (event) => {
+        const next = Number(event.target.value);
+        video.volume = next;
+        video.muted = next === 0;
+      });
+
+      fullscreenBtn.addEventListener('click', async () => {
+        try {
+          if (!document.fullscreenElement) {
+            await player.requestFullscreen();
+          } else {
+            await document.exitFullscreen();
+          }
+        } catch (err) {
+          console.warn('Fullscreen toggle failed:', err);
+        }
+      });
+
+      progressEl.addEventListener('pointerdown', (event) => {
+        const rect = progressEl.getBoundingClientRect();
+        const ratio = clamp((event.clientX - rect.left) / rect.width, 0, 1);
+        const time = ratio * (video.duration || 0);
+        if (Number.isFinite(time)) video.currentTime = time;
+        updateProgress();
+      });
+
+      progressEl.addEventListener('keydown', (event) => {
+        const step = event.shiftKey ? 15 : 5;
+        if (event.key === 'ArrowRight') { video.currentTime = Math.min(video.duration || 0, video.currentTime + step); }
+        if (event.key === 'ArrowLeft') { video.currentTime = Math.max(0, video.currentTime - step); }
+      });
+
+      player.addEventListener('pointermove', pokeControls);
+      player.addEventListener('pointerdown', pokeControls);
+      player.addEventListener('keydown', (event) => {
+        const key = event.key.toLowerCase();
+        if (key === ' ' || key === 'k') {
+          event.preventDefault();
+          togglePlayback();
+        }
+        if (key === 'f') fullscreenBtn.click();
+        if (key === 'm') mute.click();
+      });
+
+      const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
+      volume.value = String(video.volume || 1);
+      updateToggleIcon();
+      updateProgress();
+      loadSource();
+      pokeControls();
+    })();
+  </script>
 </body>
 </html>
