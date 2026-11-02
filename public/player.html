@@ -5,261 +5,209 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="color-scheme" content="dark">
   <title>Foltyn+ Player</title>
+  <link rel="stylesheet" href="https://vjs.zencdn.net/7.0.3/video-js.css">
   <style>
     :root {
-      --bg: #111;
-      --player-bg: #000;
-      --panel: rgba(0,0,0,0.78);
-      --track: rgba(255,255,255,0.22);
-      --track-fill: rgba(255,255,255,0.92);
+      --bg: #0d0d0f;
+      --panel: rgba(0, 0, 0, 0.7);
+      --panel-edge: rgba(255,255,255,0.08);
+      --track: rgba(255,255,255,0.24);
+      --track-fill: rgba(255,255,255,0.9);
       --text: #fff;
       --muted: rgba(255,255,255,0.8);
-      --shadow: rgba(0,0,0,0.5);
     }
 
     * { box-sizing: border-box; }
+
     html, body {
       margin: 0;
+      width: 100%;
       height: 100%;
       background: var(--bg);
-      font-family: Helvetica, Arial, sans-serif;
+      font-family: Arial, Helvetica, sans-serif;
       color: var(--text);
+      overflow: hidden;
     }
 
     body {
       display: grid;
       place-items: center;
-      overflow: hidden;
+      background: #111;
     }
 
-    .stage {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 14px;
-      width: 100%;
-      height: 100%;
-      padding: 16px;
-    }
-
-    .player {
+    .player-shell {
       position: relative;
       width: min(100vw, 960px);
-      height: min(100vh - 80px, 540px);
+      height: min(100vh, 540px);
       aspect-ratio: 16 / 9;
-      background: var(--player-bg);
-      box-shadow: 0 1px 3px var(--shadow);
+      background: #000;
       overflow: hidden;
-      outline: none;
-      user-select: none;
-      opacity: 1;
-      transform: none;
-      transition: opacity 0.25s linear, transform 0.25s ease-out;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+      border: 1px solid rgba(255,255,255,0.08);
     }
 
-    .player::after {
+    .video-js {
+      width: 100% !important;
+      height: 100% !important;
+      background: #000;
+      font-size: 12px;
+      font-family: Helvetica, Arial, sans-serif;
+      text-shadow: none !important;
+      outline: none !important;
+    }
+
+    .vjs-control-bar {
+      height: 44px;
+      background: linear-gradient(to top, rgba(0,0,0,0.8), rgba(0,0,0,0.2) 55%, transparent);
+    }
+
+    .vjs-progress-control {
+      cursor: pointer;
+    }
+
+    .vjs-progress-holder {
+      height: 5px;
+      border-radius: 2px;
+      background: rgba(255,255,255,0.24);
+    }
+
+    .vjs-play-progress,
+    .vjs-load-progress,
+    .vjs-slider {
+      height: 5px;
+      border-radius: 2px;
+    }
+
+    .vjs-play-progress {
+      background: #fff;
+    }
+
+    .vjs-play-progress::before {
       content: "";
       position: absolute;
-      inset: 0;
-      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.05);
-      pointer-events: none;
-      z-index: 3;
-    }
-
-    .player.hide-controls .controls {
-      opacity: 0;
-      transform: translateY(8px);
-      pointer-events: none;
-    }
-
-    video {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      display: block;
-      background: #000;
-      object-fit: cover;
-    }
-
-    .surface {
-      position: absolute;
-      inset: 0;
-      z-index: 1;
-      touch-action: manipulation;
-    }
-
-    .big {
-      position: absolute;
-      left: 50%;
-      top: 50%;
-      transform: translate(-50%, -50%);
-      width: 110px;
-      height: 110px;
-      border: 0;
-      border-radius: 50%;
-      background: rgba(0,0,0,0.26);
-      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.18);
-      opacity: 1;
-      cursor: pointer;
-      z-index: 4;
-      transition: opacity 0.15s linear, transform 0.12s ease;
-    }
-
-    .big.hidden {
-      opacity: 0;
-      pointer-events: none;
-    }
-
-    .big:active {
-      transform: translate(-50%, -50%) scale(0.96);
-    }
-
-    .controls {
-      position: absolute;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      padding: 0 10px 8px;
-      background: linear-gradient(to top, rgba(0,0,0,0.85), rgba(0,0,0,0.45) 50%, transparent);
-      z-index: 5;
-      opacity: 1;
-      transform: translateY(0);
-      transition: opacity 0.2s linear, transform 0.2s ease-out;
-    }
-
-    .prog {
-      height: 22px;
-      display: flex;
-      align-items: center;
-      cursor: pointer;
-      touch-action: none;
-      margin-bottom: 6px;
-    }
-
-    .track {
-      position: relative;
-      width: 100%;
-      height: 4px;
-      background: var(--track);
-      border-radius: 2px;
-      overflow: hidden;
-    }
-
-    .buf, .played {
-      position: absolute;
-      left: 0;
-      top: 0;
-      bottom: 0;
-      width: 0;
-      border-radius: inherit;
-    }
-
-    .buf {
-      background: rgba(255,255,255,0.28);
-    }
-
-    .played {
-      background: var(--track-fill);
-    }
-
-    .thumb {
-      position: absolute;
-      left: 0;
-      top: 50%;
+      right: -6px;
+      top: -4px;
       width: 12px;
       height: 12px;
-      margin-left: -6px;
       border-radius: 50%;
       background: #fff;
-      transform: translateY(-50%);
-      box-shadow: 0 1px 2px rgba(0,0,0,0.35);
+      box-shadow: 0 1px 1px rgba(0,0,0,0.25);
     }
 
-    .row {
-      display: flex;
-      align-items: center;
-      height: 40px;
-      gap: 8px;
+    .vjs-control-bar .vjs-control {
+      font-size: 12px;
+      color: rgba(255,255,255,0.9);
     }
 
-    .cb {
-      width: 38px;
-      height: 38px;
-      border: 0;
-      background: transparent;
-      color: var(--text);
-      opacity: 0.82;
-      border-radius: 8px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      transition: opacity 0.12s linear, transform 0.12s ease-out, background 0.12s ease;
+    .vjs-play-control,
+    .vjs-volume-panel,
+    .vjs-fullscreen-control,
+    .vjs-pip-button,
+    .vjs-cast-button {
+      opacity: 0.88;
+      transition: opacity 0.12s linear, transform 0.12s ease-out;
     }
 
-    .cb:hover,
-    .cb.active {
+    .vjs-play-control:hover,
+    .vjs-volume-panel:hover,
+    .vjs-fullscreen-control:hover,
+    .vjs-pip-button:hover,
+    .vjs-cast-button:hover {
       opacity: 1;
-      background: rgba(255,255,255,0.06);
     }
 
-    .cb:active {
+    .vjs-play-control:active,
+    .vjs-fullscreen-control:active,
+    .vjs-pip-button:active,
+    .vjs-cast-button:active {
       transform: scale(0.96);
     }
 
-    .icon {
-      width: 26px;
-      height: 26px;
-      display: inline-block;
-      vertical-align: middle;
-      fill: currentColor;
+    .video-js .vjs-volume-panel .vjs-volume-control {
+      width: 42px;
+      height: 64px;
+      left: -6px;
+      bottom: 42px;
+      background: transparent;
     }
 
-    .vol {
-      display: flex;
-      align-items: center;
-      gap: 8px;
+    .vjs-slider-vertical {
+      width: 4px;
+      height: 100%;
+      border-radius: 2px;
+      background: rgba(255,255,255,0.2);
     }
 
-    .vol input {
-      width: 0;
+    .vjs-volume-level {
+      background: #fff;
+      border-radius: 2px;
+    }
+
+    .vjs-big-play-button {
+      display: block !important;
+      width: 100px;
+      height: 100px;
+      left: 50%;
+      top: 50%;
+      margin-left: -50px;
+      margin-top: -50px;
+      border: none;
+      background: rgba(0,0,0,0.28);
+      border-radius: 50%;
       opacity: 0;
-      transition: width 0.2s ease, opacity 0.2s ease;
-      accent-color: #fff;
+      pointer-events: none;
+      transition: opacity 0.2s linear, transform 0.12s ease;
     }
 
-    .vol:hover input,
-    .vol:focus-within input {
-      width: 78px;
+    .video-js.vjs-paused .vjs-big-play-button,
+    .video-js.vjs-ended .vjs-big-play-button {
       opacity: 1;
+      pointer-events: auto;
     }
 
-    .time {
-      color: var(--muted);
-      font-size: 12px;
-      min-width: 80px;
-      white-space: nowrap;
+    .vjs-big-play-button:active {
+      transform: scale(0.96);
     }
 
-    .sp {
-      flex: 1;
+    .video-js .vjs-big-play-button .vjs-icon-placeholder {
+      display: none;
+    }
+
+    .video-js .vjs-big-play-button::before,
+    .video-js .vjs-big-play-button::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+    }
+
+    .video-js .vjs-big-play-button::before {
+      background: rgba(0,0,0,0.3);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.2);
+    }
+
+    .video-js .vjs-big-play-button::after {
+      left: 40%;
+      right: 35%;
+      top: 25%;
+      bottom: 25%;
+      background: #fff;
+      clip-path: polygon(0 0, 100% 50%, 0 100%);
+      transform: translateX(4px);
     }
 
     .status {
       position: absolute;
       left: 16px;
-      bottom: 70px;
-      z-index: 6;
-      max-width: min(70%, 480px);
-      padding: 8px 12px;
+      bottom: 58px;
+      z-index: 10;
+      padding: 7px 10px;
       border-radius: 999px;
-      background: rgba(0,0,0,0.36);
+      background: rgba(0,0,0,0.38);
       border: 1px solid rgba(255,255,255,0.12);
-      color: rgba(255,255,255,0.83);
+      color: rgba(255,255,255,0.85);
       font-size: 12px;
-      backdrop-filter: blur(6px);
+      letter-spacing: 0.02em;
       opacity: 0;
       transform: translateY(6px);
       transition: opacity 0.2s ease, transform 0.2s ease;
@@ -272,273 +220,164 @@
     }
 
     @media (max-width: 620px) {
-      .player { width: 100vw; height: 100vh; }
-      .time { min-width: 72px; }
-      .vol:hover input, .vol:focus-within input { width: 64px; }
+      .player-shell {
+        width: 100vw;
+        height: 100vh;
+      }
     }
   </style>
 </head>
 <body>
-  <main class="stage">
-    <div class="player" id="player" tabindex="0" aria-label="Foltyn video player">
-      <video id="video" playsinline preload="metadata" aria-label="Movie video"></video>
-      <div class="surface" id="surface"></div>
-
-      <button class="big" id="big" aria-label="Play video">
-        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor"></path></svg>
-      </button>
-
-      <div id="status" class="status" role="status" aria-live="polite"></div>
-
-      <div class="controls" id="controls">
-        <div class="prog" id="prog" role="slider" aria-label="Seek" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" tabindex="0">
-          <div class="track">
-            <div class="buf" id="buf"></div>
-            <div class="played" id="played"></div>
-            <div class="thumb" id="thumb"></div>
-          </div>
-        </div>
-
-        <div class="row">
-          <button class="cb" id="toggle" aria-label="Play">
-            <svg id="toggleIcon" class="icon" viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M8 5v14l11-7z" fill="currentColor"></path>
-            </svg>
-          </button>
-
-          <div class="vol">
-            <button class="cb" id="mute" aria-label="Mute">
-              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M3 10v4h4l5 5V5L7 10H3zm12.5 2a4.5 4.5 0 0 0-2.5-4.03v8.06A4.5 4.5 0 0 0 15.5 12zm0-8.5a8.5 8.5 0 0 1 0 17v-2a6.5 6.5 0 0 0 0-13v-2z" fill="currentColor"></path>
-              </svg>
-            </button>
-            <input id="volume" type="range" min="0" max="1" step="0.01" value="1" aria-label="Volume">
-          </div>
-
-          <div class="time" id="time">0:00 / 0:00</div>
-          <div class="sp"></div>
-
-          <button class="cb" id="fullscreen" aria-label="Fullscreen">
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M7 3H3v4h2V5h2V3zm12 0h-4v2h2v2h2V3zM3 17v4h4v-2H5v-2H3zm16 0v2h-2v2h4v-4h-2z" fill="currentColor"></path>
-            </svg>
-          </button>
-        </div>
-      </div>
-    </div>
+  <main class="player-shell">
+    <video class="video-js" controls preload="metadata" playsinline aria-label="Foltyn video"></video>
+    <div id="status" class="status" role="status" aria-live="polite"></div>
   </main>
 
-  <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.20"></script>
+  <script src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"></script>
+  <script src="https://vjs.zencdn.net/7.0.3/video.js"></script>
   <script>
     (() => {
-      const player = document.getElementById('player');
-      const video = document.getElementById('video');
-      const surface = document.getElementById('surface');
-      const big = document.getElementById('big');
+      const $video = document.querySelector('.video-js');
       const statusEl = document.getElementById('status');
-      const toggle = document.getElementById('toggle');
-      const toggleIcon = document.getElementById('toggleIcon');
-      const mute = document.getElementById('mute');
-      const volume = document.getElementById('volume');
-      const timeEl = document.getElementById('time');
-      const prog = document.getElementById('prog');
-      const buf = document.getElementById('buf');
-      const played = document.getElementById('played');
-      const thumb = document.getElementById('thumb');
-      const fullscreen = document.getElementById('fullscreen');
-
-      const FALLBACK_SRC = 'https://archive.org/download/BigBuckBunny_328/BigBuckBunny_512kb.mp4';
-      let hls = null;
-      let hideTimer = null;
-
-      const setStatus = (msg) => {
-        statusEl.textContent = msg || '';
-        statusEl.classList.toggle('show', !!msg);
+      const setStatus = (message) => {
+        statusEl.textContent = message || '';
+        statusEl.classList.toggle('show', !!message);
       };
 
-      const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
+      const videojs = window.videojs;
+      const Button = videojs.getComponent('Button');
 
-      const formatTime = (seconds) => {
-        const safe = Number.isFinite(seconds) ? Math.max(0, Math.floor(seconds)) : 0;
-        const h = Math.floor(safe / 3600);
-        const m = Math.floor((safe % 3600) / 60);
-        const s = safe % 60;
-        if (h > 0) return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-        return `${m}:${String(s).padStart(2, '0')}`;
-      };
-
-      const updateToggleIcon = () => {
-        const playing = !video.paused && !video.ended;
-        toggle.setAttribute('aria-label', playing ? 'Pause' : 'Play');
-        toggleIcon.innerHTML = playing
-          ? '<path d="M7 5h3v14H7zm7 0h3v14h-3z" fill="currentColor"></path>'
-          : '<path d="M8 5v14l11-7z" fill="currentColor"></path>';
-        big.classList.toggle('hidden', playing);
-      };
-
-      const updateProgress = () => {
-        const duration = Number.isFinite(video.duration) && video.duration > 0 ? video.duration : 0;
-        const current = Number.isFinite(video.currentTime) ? video.currentTime : 0;
-        const pct = duration > 0 ? (current / duration) * 100 : 0;
-        const buffered = video.buffered && video.buffered.length ? video.buffered.end(video.buffered.length - 1) : 0;
-        const bufferPct = duration > 0 ? (buffered / duration) * 100 : 0;
-
-        played.style.width = `${pct}%`;
-        thumb.style.left = `${pct}%`;
-        buf.style.width = `${bufferPct}%`;
-        prog.setAttribute('aria-valuenow', String(Math.round(pct)));
-        timeEl.textContent = `${formatTime(current)} / ${formatTime(duration)}`;
-      };
-
-      const pokeControls = () => {
-        player.classList.remove('hide-controls');
-        clearTimeout(hideTimer);
-        if (!video.paused) {
-          hideTimer = setTimeout(() => player.classList.add('hide-controls'), 2600);
-        }
-      };
-
-      const togglePlayback = async () => {
-        try {
-          if (video.paused || video.ended) {
-            if (video.ended) video.currentTime = 0;
-            await video.play();
-          } else {
-            video.pause();
+      class PictureInPictureButton extends Button {
+        constructor(player, options) {
+          super(player, options);
+          this.addClass('vjs-pip-button');
+          this.controlText('Picture in Picture');
+          const icon = this.el().querySelector('.vjs-icon-placeholder');
+          if (icon) {
+            icon.innerHTML = '<svg aria-hidden="true" viewBox="0 0 24 24" focusable="false"><path d="M19 7h-8v6h8V7Zm2-4H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2Zm0 16H3V5h18v14Z" fill="currentColor"/></svg>';
           }
-        } catch (error) {
-          console.warn('togglePlayback failed:', error);
+          this.updateAvailability();
+          $video.addEventListener('enterpictureinpicture', () => this.updateState(true));
+          $video.addEventListener('leavepictureinpicture', () => this.updateState(false));
         }
-      };
 
-      const attachHls = (src) => {
-        if (window.Hls && Hls.isSupported()) {
-          if (hls) hls.destroy();
-          hls = new Hls({
-            maxBufferLength: 30,
-            backBufferLength: 90,
-            maxBufferSize: 60 * 1000 * 1000
-          });
-          hls.loadSource(src);
-          hls.attachMedia(video);
-          hls.on(Hls.Events.ERROR, (event, data) => {
-            if (data && data.fatal) {
-              console.error('HLS fatal error:', data);
-              setStatus('Playback error. Try another source.');
-            }
-          });
-          hls.on(Hls.Events.MANIFEST_PARSED, () => {
-            video.play().catch(() => {});
-          });
-        } else {
-          video.src = src;
+        updateAvailability() {
+          const supported = document.pictureInPictureEnabled && typeof $video.requestPictureInPicture === 'function';
+          if (supported) this.show(); else this.hide();
         }
-      };
 
-      const loadMovie = async () => {
-        const tmdbId = new URLSearchParams(window.location.search).get('id');
+        updateState(active) {
+          this.el().classList.toggle('vjs-pip-active', active);
+          this.controlText(active ? 'Exit Picture in Picture' : 'Picture in Picture');
+        }
 
-        if (!tmdbId) {
-          video.src = FALLBACK_SRC;
-          setStatus('No movie ID found — using fallback stream.');
+        async handleClick() {
+          if (document.pictureInPictureElement === $video) {
+            await document.exitPictureInPicture();
+          } else if (document.pictureInPictureEnabled && typeof $video.requestPictureInPicture === 'function') {
+            try { await $video.requestPictureInPicture(); } catch (error) { console.warn('PIP failed:', error); }
+          }
+        }
+      }
+
+      class CastButton extends Button {
+        constructor(player, options) {
+          super(player, options);
+          this.addClass('vjs-cast-button');
+          this.controlText('Cast to device');
+          this.hide();
+          const icon = this.el().querySelector('.vjs-icon-placeholder');
+          if (icon) {
+            icon.innerHTML = '<svg aria-hidden="true" viewBox="0 0 24 24" focusable="false"><path d="M2 18v3h3a3 3 0 0 0-3-3Zm0-5v3a5 5 0 0 1 5 5h3a8 8 0 0 0-8-8Zm0-5v3c5.52 0 10 4.48 10 10h3C15 14.16 9.84 9 2 9Zm18-6H4a2 2 0 0 0-2 2v2h2V7h16v10h-8v2h8a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2Z" fill="currentColor"/></svg>';
+          }
+        }
+
+        async handleClick() {
+          if (!window.cast || !window.cast.framework) return;
+          const context = window.cast.framework.CastContext.getInstance();
+          try {
+            let session = context.getCurrentSession();
+            if (!session) session = await context.requestSession();
+            if (!session) return;
+            const source = $video.querySelector('source');
+            const contentType = (source && source.type) || 'video/mp4';
+            const mediaInfo = new window.chrome.cast.media.MediaInfo($video.currentSrc || $video.src, contentType);
+            mediaInfo.streamType = window.chrome.cast.media.StreamType.BUFFERED;
+            mediaInfo.metadata = new window.chrome.cast.media.GenericMediaMetadata();
+            mediaInfo.metadata.title = $video.getAttribute('aria-label') || 'Video';
+            await session.loadMedia(new window.chrome.cast.media.LoadRequest(mediaInfo));
+          } catch (error) {
+            if (error && error.code !== 'cancel') console.warn('Cast failed:', error);
+          }
+        }
+      }
+
+      videojs.registerComponent('PictureInPictureButton', PictureInPictureButton);
+      videojs.registerComponent('FoltynCastButton', CastButton);
+
+      const player = videojs($video, {
+        controlBar: {
+          children: ['playToggle', 'progressControl', 'currentTimeDisplay', 'timeDivider', 'durationDisplay', 'volumePanel', 'PictureInPictureButton', 'FoltynCastButton', 'fullscreenToggle'],
+          volumeMenuButton: { inline: false, vertical: true },
+          volumePanel: { inline: false },
+          progressControl: { seekBar: true },
+          currentTimeDisplay: true,
+          timeDivider: true,
+          durationDisplay: true,
+          remainingTimeDisplay: false,
+          subtitlesButton: false,
+          captionsButton: false,
+          audioTrackButton: false
+        }
+      });
+
+      function updateCastButton(available) {
+        const castButton = player.getChild('controlBar').getChild('FoltynCastButton');
+        if (!available || !window.cast || !window.chrome || !window.chrome.cast) {
+          castButton.hide();
           return;
         }
+        const context = window.cast.framework.CastContext.getInstance();
+        context.setOptions({
+          receiverApplicationId: window.chrome.cast.media.DEFAULT_MEDIA_RECEIVER_APP_ID,
+          autoJoinPolicy: window.cast.AutoJoinPolicy.ORIGIN_SCOPED
+        });
+        castButton.show();
+        context.addEventListener(window.cast.framework.CastContextEventType.SESSION_STATE_CHANGED, (event) => {
+          const connected = event.sessionState === window.cast.framework.SessionState.SESSION_STARTED || event.sessionState === window.cast.framework.SessionState.SESSION_RESUMED;
+          castButton.el().classList.toggle('vjs-cast-connected', connected);
+        });
+      }
 
-        setStatus('Loading source…');
-
-        try {
-          const response = await fetch(`/api/movie?id=${encodeURIComponent(tmdbId)}`);
-          const payload = await response.json();
-
-          if (!response.ok || !payload.success) {
-            throw new Error(payload?.error || `Request failed (${response.status})`);
-          }
-
-          const source = (payload.servers || []).find((server) => server.status === 'ready' && server.url)?.url;
-          if (!source) throw new Error('No playable source returned.');
-
-          attachHls(source);
-          setStatus('');
-        } catch (error) {
-          console.error('Movie load failed:', error);
-          video.src = FALLBACK_SRC;
-          setStatus('Source unavailable — fallback player loaded.');
-        }
+      window.__onGCastApiAvailable = function (available) {
+        window.foltynCastApiAvailable = available;
+        window.dispatchEvent(new CustomEvent('foltyn-cast-api-available', { detail: available }));
       };
+      window.addEventListener('foltyn-cast-api-available', (event) => updateCastButton(event.detail));
+      if (typeof window.foltynCastApiAvailable === 'boolean') updateCastButton(window.foltynCastApiAvailable);
 
-      toggle.addEventListener('click', togglePlayback);
-      big.addEventListener('click', togglePlayback);
-
-      mute.addEventListener('click', () => {
-        video.muted = !video.muted;
-      });
-
-      volume.addEventListener('input', (event) => {
-        const next = Number(event.target.value);
-        video.volume = next;
-        video.muted = next === 0;
-      });
-
-      fullscreen.addEventListener('click', async () => {
-        try {
-          if (!document.fullscreenElement) {
-            await player.requestFullscreen();
-          } else {
-            await document.exitFullscreen();
-          }
-        } catch (error) {
-          console.warn('Fullscreen failed:', error);
-        }
-      });
-
-      prog.addEventListener('pointerdown', (event) => {
-        const rect = prog.getBoundingClientRect();
-        const ratio = clamp((event.clientX - rect.left) / rect.width, 0, 1);
-        if (Number.isFinite(video.duration) && video.duration > 0) {
-          video.currentTime = ratio * video.duration;
-        }
-        updateProgress();
-      });
-
-      prog.addEventListener('keydown', (event) => {
-        const step = event.shiftKey ? 15 : 5;
-        if (event.key === 'ArrowRight') video.currentTime = Math.min(video.duration || 0, video.currentTime + step);
-        if (event.key === 'ArrowLeft') video.currentTime = Math.max(0, video.currentTime - step);
-      });
-
-      player.addEventListener('pointermove', pokeControls);
-      player.addEventListener('pointerdown', pokeControls);
-      player.addEventListener('keydown', (event) => {
-        const key = event.key.toLowerCase();
-        if (key === ' ' || key === 'k') {
-          event.preventDefault();
-          togglePlayback();
-        }
-        if (key === 'f') fullscreen.click();
-        if (key === 'm') mute.click();
-      });
-
-      video.addEventListener('play', () => updateToggleIcon());
-      video.addEventListener('pause', () => updateToggleIcon());
-      video.addEventListener('ended', () => updateToggleIcon());
-      video.addEventListener('timeupdate', updateProgress);
-      video.addEventListener('loadedmetadata', updateProgress);
-      video.addEventListener('progress', updateProgress);
-      video.addEventListener('volumechange', () => {
-        volume.value = String(video.volume || 1);
-      });
-      video.addEventListener('error', () => {
-        if (video.currentSrc !== FALLBACK_SRC) {
-          video.src = FALLBACK_SRC;
-          setStatus('Playback failed — fallback stream loaded.');
-        }
-      });
-
-      volume.value = String(video.volume || 1);
-      updateToggleIcon();
-      updateProgress();
-      loadMovie();
-      pokeControls();
+      const tmdbId = new URLSearchParams(window.location.search).get('id');
+      if (tmdbId) {
+        fetch(`/api/movie?id=${encodeURIComponent(tmdbId)}`)
+          .then((response) => {
+            if (!response.ok) throw new Error(`Source request failed (${response.status})`);
+            return response.json();
+          })
+          .then((payload) => {
+            const source = payload.servers?.find((server) => server.status === 'ready' && server.url)?.url;
+            if (!source) throw new Error('No playable source was returned');
+            player.src({ src: source, type: 'application/x-mpegURL' });
+            player.play().catch(() => {});
+          })
+          .catch((error) => {
+            console.error('[player] source error:', error);
+            player.error({ code: 4, message: error.message });
+            setStatus('Playback unavailable');
+          });
+      } else {
+        player.error({ code: 4, message: 'Missing TMDB ID' });
+        setStatus('Missing TMDB ID');
+      }
     })();
   </script>
 </body>
