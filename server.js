@@ -538,30 +538,21 @@ function embedPlayerHandler(req, res) {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="color-scheme" content="dark">
-<title>foltynsrc player</title>
+<title>Foltyn+ player</title>
 <style>
-:root { color-scheme: dark; }
 * { box-sizing: border-box; }
-html, body { width: 100%; min-height: 100%; margin: 0; background: #050505; }
-body { display: grid; place-items: center; padding: 18px; color: #f5f5f5; font: 14px/1.45 Inter, ui-sans-serif, system-ui, sans-serif; }
-.player-shell { width: min(100%, 1100px); }
-.player-frame { position: relative; overflow: hidden; aspect-ratio: 16 / 9; background: #000; border: 1px solid rgba(255,255,255,.16); border-radius: 14px; box-shadow: 0 24px 80px rgba(0,0,0,.45); }
-video { display: block; width: 100%; height: 100%; background: #000; }
-.overlay { position: absolute; inset: 0; display: grid; place-items: center; padding: 24px; background: rgba(0,0,0,.72); text-align: center; }
+html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: #000; }
+body { display: grid; place-items: center; }
+.player { position: relative; width: 100vw; height: 100vh; background: #000; line-height: 0; }
+video { display: block; width: 100%; height: 100%; background: #000; object-fit: contain; outline: none; }
+.overlay { position: absolute; inset: 0; display: grid; place-items: center; padding: 24px; background: rgba(0,0,0,.8); color: #fff; font: 14px/1.4 Arial, sans-serif; text-align: center; }
 .overlay[hidden] { display: none; }
-.overlay p { max-width: 560px; margin: 0; color: #f0caca; }
-.player-footer { display: flex; justify-content: space-between; gap: 12px; padding: 10px 2px 0; color: #777; font-size: 11px; }
-.player-footer a { color: #aaa; }
 </style>
 </head>
 <body>
-<main class="player-shell" aria-label="foltynsrc video player">
-  <div class="player-frame">
-    <video id="video" controls playsinline preload="metadata"></video>
-    <div id="overlay" class="overlay"><p id="message">Loading source…</p></div>
-  </div>
-  <div class="player-footer"><span id="title">foltynsrc</span><a href="/" target="_blank" rel="noopener">Licensed by Foltyn</a></div>
+<main class="player" aria-label="Foltyn+ video player">
+  <video id="video" controls playsinline preload="metadata"></video>
+  <div id="overlay" class="overlay" hidden><span id="message"></span></div>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 <script>
@@ -577,7 +568,6 @@ const hideOverlay = () => { overlay.hidden = true; };
     const response = await fetch('/api/movie?id=' + encodeURIComponent(tmdb), { headers: { accept: 'application/json' } });
     const data = await response.json();
     if (!response.ok || !data.success) throw new Error(data.error || 'Unable to load movie sources');
-    title.textContent = data.title || 'foltynsrc';
     const source = (data.servers || []).find((server) => server.status === 'ready' && server.url);
     if (!source) throw new Error('No playable source was returned');
     const streamUrl = source.url;
