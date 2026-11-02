@@ -497,15 +497,30 @@ async function movieApiHandler(req, res) {
         const forwardedProto = String(req.headers['x-forwarded-proto'] || 'http').split(',')[0];
         const host = req.headers.host || 'foltynsrc.vercel.app';
         const baseUrl = `${forwardedProto}://${host}`;
-        result.servers = result.servers.map((server) => ({
-            ...server,
-            // The browser mints the provider token after receiving this response.
-            // The proxy then mints its own relay token when the HLS URL is requested.
-            url: `${baseUrl}/proxy?url=${encodeURIComponent(server.raw)}`,
-            combined_url: `${baseUrl}/proxy?url=${encodeURIComponent(server.raw)}`,
-            token: null,
-            token_source: 'client-browser',
-            status: 'ready',
+        result.servers = await Promise.all(result.servers.map(async (server) => {
+            let stamped;
+            try {
+                stamped = await stampStreamUrl(server.raw);
+            } catch (error) {
+                stamped = {
+                    finalUrl: server.raw,
+                    origin: new URL(server.raw).origin,
+                    token: '',
+                    tokenError: error.message,
+                };
+            }
+            const combinedUrl = `${baseUrl}/proxy?url=${encodeURIComponent(stamped.finalUrl)}`;
+            return {
+                ...server,
+                origin: stamped.origin || server.origin,
+                url: combinedUrl,
+                combined_url: combinedUrl,
+                raw: server.raw,
+                token: stamped.token || null,
+                tokenError: stamped.tokenError || null,
+                token_source: 'server-api',
+                status: stamped.token ? 'ready' : 'token-error',
+            };
         }));
         res.json(result);
     } catch (e) {
