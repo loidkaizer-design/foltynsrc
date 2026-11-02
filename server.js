@@ -435,39 +435,25 @@ async function getPlaylist(tmdb, namingMode) {
         throw new Error('no stream_urls returned');
     }
 
-    // Step 6: stamp each stream URL with its per-host generate.php token (PARALLEL)
-    const stamped = await Promise.allSettled(
-        streamUrls.map(async (raw, i) => {
-            const stamped = await stampStreamUrl(raw);
-            return {
-                id: i + 1,
-                name: serverName(i, namingMode),
-                origin: stamped.origin,
-                url: stamped.finalUrl,
-                combined_url: stamped.finalUrl,
-                format: 'HLS · master.m3u8',
-                raw,
-                token: stamped.token,
-                tokenError: stamped.tokenError,
-                status: stamped.token ? 'ready' : 'token-failed',
-            };
-        })
-    );
-
-    const servers = stamped.map((r, i) =>
-        r.status === 'fulfilled' ? r.value : {
+    // Step 6: return raw master.m3u8 URLs. The browser creates the provider
+    // token after Get sources, then places it inside the encoded /proxy?url=
+    // Combined URL so the token is bound to the viewer's IP.
+    const servers = streamUrls.map((raw, i) => {
+        let origin = '';
+        try { origin = new URL(raw).origin; } catch (e) {}
+        return {
             id: i + 1,
             name: serverName(i, namingMode),
-            origin: '',
-            url: streamUrls[i] || '',
-            combined_url: streamUrls[i] || '',
+            origin,
+            url: raw,
+            combined_url: raw,
             format: 'HLS · master.m3u8',
-            raw: streamUrls[i] || '',
+            raw,
             token: '',
-            tokenError: r.reason ? r.reason.message : 'unknown',
-            status: 'error',
-        }
-    );
+            tokenError: null,
+            status: 'pending-client-token',
+        };
+    });
 
     return {
         success: true,
