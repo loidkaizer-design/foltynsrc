@@ -2,383 +2,608 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="dark">
   <title>Foltyn+ Player</title>
   <link rel="stylesheet" href="https://vjs.zencdn.net/7.0.3/video-js.css">
   <style>
-    :root {
-      --bg: #0d0d0f;
-      --panel: rgba(0, 0, 0, 0.7);
-      --panel-edge: rgba(255,255,255,0.08);
-      --track: rgba(255,255,255,0.24);
-      --track-fill: rgba(255,255,255,0.9);
-      --text: #fff;
-      --muted: rgba(255,255,255,0.8);
-    }
+* {
+  box-sizing: border-box;
+}
 
-    * { box-sizing: border-box; }
+html,
+body {
+  margin: 0px auto;
+  padding: 0px;
+  background-color: #333333;
+}
 
-    html, body {
-      margin: 0;
-      width: 100%;
-      height: 100%;
-      background: var(--bg);
-      font-family: Arial, Helvetica, sans-serif;
-      color: var(--text);
-      overflow: hidden;
-    }
+body {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
 
-    body {
-      display: grid;
-      place-items: center;
-      background: #111;
-    }
+.player {
+  position: relative;
+  width: 640px;
+  height: 360px;
+  background: #000;
+  box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.5);
+  line-height: 0px;
+  opacity: 0;
+  transform: scale3d(0.85, 0.85, 1);
+  transition: opacity 0.25s linear, transform 0.25s ease-out;
+}
+.player.ready {
+  opacity: 1;
+  transform: scale3d(1, 1, 1);
+}
+.player::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  box-shadow: inset 0px 0px 0px 1px rgba(255, 255, 255, 0.05), inset 0px 1px 0px rgba(255, 255, 255, 0.05);
+  pointer-events: none;
+}
 
-    .player-shell {
-      position: relative;
-      width: min(100vw, 960px);
-      height: min(100vh, 540px);
-      aspect-ratio: 16 / 9;
-      background: #000;
-      overflow: hidden;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
-      border: 1px solid rgba(255,255,255,0.08);
-    }
+.video-js {
+  width: 100%;
+  height: 100%;
+  font-size: 12px;
+  font-family: Helvetica, Arial, sans-serif;
+  text-shadow: none !important;
+  outline: none !important;
+}
 
-    .video-js {
-      width: 100% !important;
-      height: 100% !important;
-      background: #000;
-      font-size: 12px;
-      font-family: Helvetica, Arial, sans-serif;
-      text-shadow: none !important;
-      outline: none !important;
-    }
+.video-js .vjs-control-bar {
+  height: 40px;
+  background-color: transparent;
+}
 
-    .vjs-control-bar {
-      height: 44px;
-      background: linear-gradient(to top, rgba(0,0,0,0.8), rgba(0,0,0,0.2) 55%, transparent);
-    }
+.vjs-control-bar::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0px;
+  height: 120px;
+  background-image: linear-gradient(to top, black 0%, rgba(0, 0, 0, 0.738) 19%, rgba(0, 0, 0, 0.541) 34%, rgba(0, 0, 0, 0.382) 47%, rgba(0, 0, 0, 0.278) 56.5%, rgba(0, 0, 0, 0.194) 65%, rgba(0, 0, 0, 0.126) 75%, rgba(0, 0, 0, 0.063) 88%, rgba(0, 0, 0, 0));
+  opacity: 0.75;
+  pointer-events: none;
+}
 
-    .vjs-progress-control {
-      cursor: pointer;
-    }
+.video-js .vjs-volume-panel .vjs-volume-control.vjs-volume-vertical {
+  background-color: transparent;
+  width: 40px;
+  height: 60px;
+  margin: 0px;
+  left: -40px;
+  bottom: 60px;
+  cursor: default;
+  transition: visibility 0.5s, opacity 0.5s, height 0.5s 0.5s, width 0.5s 0.5s, left 0.5s 0.5s, top 0.5s 0.5s;
+}
 
-    .vjs-progress-holder {
-      height: 5px;
-      border-radius: 2px;
-      background: rgba(255,255,255,0.24);
-    }
+.video-js .vjs-volume-bar.vjs-slider-bar {
+  opacity: 0.75;
+  height: 100%;
+  margin-top: 0px;
+  transition: opacity 0.1s linear;
+}
 
-    .vjs-play-progress,
-    .vjs-load-progress,
-    .vjs-slider {
-      height: 5px;
-      border-radius: 2px;
-    }
+.video-js .vjs-volume-bar.vjs-slider-bar:hover {
+  opacity: 1;
+}
 
-    .vjs-play-progress {
-      background: #fff;
-    }
+.video-js .vjs-play-control,
+.video-js .vjs-mute-control,
+.video-js .vjs-fullscreen-control,
+.video-js .vjs-progress-control .vjs-progress-holder {
+  opacity: 0.75;
+  transition: transform 0.1s ease-out, opacity 0.1s linear;
+}
 
-    .vjs-play-progress::before {
-      content: "";
-      position: absolute;
-      right: -6px;
-      top: -4px;
-      width: 12px;
-      height: 12px;
-      border-radius: 50%;
-      background: #fff;
-      box-shadow: 0 1px 1px rgba(0,0,0,0.25);
-    }
+.video-js .vjs-play-control,
+.video-js .vjs-mute-control,
+.video-js .vjs-fullscreen-control {
+  width: 30px;
+  height: 30px;
+  margin: 5px;
+  padding: 0px !important;
+}
 
-    .vjs-control-bar .vjs-control {
-      font-size: 12px;
-      color: rgba(255,255,255,0.9);
-    }
+.video-js .vjs-icon-placeholder::before {
+  content: "" !important;
+}
 
-    .vjs-play-control,
-    .vjs-volume-panel,
-    .vjs-fullscreen-control,
-    .vjs-pip-button,
-    .vjs-cast-button {
-      opacity: 0.88;
-      transition: opacity 0.12s linear, transform 0.12s ease-out;
-    }
+.video-js .vjs-play-control .vjs-icon-placeholder,
+.video-js .vjs-mute-control .vjs-icon-placeholder,
+.video-js .vjs-fullscreen-control .vjs-icon-placeholder,
+.vjs-big-play-button::after {
+  position: absolute;
+  left: 0px;
+  right: 0px;
+  top: 0px;
+  bottom: 0px;
+  background-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZlcnNpb249IjEuMSIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIHByZXNlcnZlQXNwZWN0UmF0aW89Im5vbmUiIHg9IjBweCIgeT0iMHB4IiB3aWR0aD0iMTIwcHgiIGhlaWdodD0iNDIwcHgiIHZpZXdCb3g9IjAgMCAxMjAgNDIwIj48ZGVmcz48ZmlsdGVyIGlkPSJGaWx0ZXJfMSIgeD0iLTIwJSIgeT0iLTIwJSIgd2lkdGg9IjE0MCUiIGhlaWdodD0iMTQwJSIgY29sb3ItaW50ZXJwb2xhdGlvbi1maWx0ZXJzPSJzUkdCIj48ZmVGbG9vZCBmbG9vLWNvbG9yPSIjMDAwMDAwIiBmbG9vLW9wYWNpdHk9IjAuMjQ3MDU4ODIzNTI5NDExNzgiIGluPSJTb3VyY2VHcmFwaGljIiByZXN1bHQ9InJlc3VsdDEiLz48ZmVDb21wb3NpdGUgaW4yPSJTb3VyY2VHcmFwaGljIiBpbj0icmVzdWx0MSIgb3BlcmF0b3I9ImluIiByZXN1bHQ9InJlc3VsdDIiLz48ZmVHYXVzc2lhbkJsdXIgaW49InJlc3VsdDIiIHN0ZERldmlhdGlvbj0iMC42NjY2NjY2NjY2NjY2NjY2LDIuMDQ3NDA2ODQ0NDEwNjI1IiByZXN1bHQ9InJlc3VsdDMiLz48ZmVPZmZzZXQgZHg9IjYuMTIzMjMzOTk1NzM2NzY2ZS0xNyIgZHk9IjEiIGluPSJyZXN1bHQzIiByZXN1bHQ9InJlc3VsdDQiLz48ZmVDb21wb3NpdGUgaW4yPSJyZXN1bHQ0IiBpbj0iU291cmNlR3JhcGhpYyIgb3BlcmF0b3I9Im92ZXIiIHJlc3VsdD0icmVzdWx0NSIvPjwvZmlsdGVyPjxnIGlkPSJzcHJpdGVfMF9MYXllcjBfMF9GSUxMIj48cGF0aCBmaWxsPSIjRkZGRkZGIiBzdHJva2U9Im5vbmUiIGQ9Ik0gOC44NSAxNDYuMDVRIDguNDUgMTQ2LjEgOC4yNSAxNDYuNDUgOCAxNDYuNzUgOCAxNDcuMkwgOCAxNjIuNzVRIDggMTYzLjIgOC4yNSAxNjMuNTUgOC40NSAxNjMuODUgOC44NSAxNjMuOTUgOS4yNSAxNjQuMDUgOS42IDE2My44NUwgMjMuNCAxNTYuMVEgMjMuOCAxNTUuODUgMjMuOTUgMTU1LjQgMjQuMSAxNTUgMjMuOTUgMTU0LjU1IDIzLjggMTU0LjEgMjMuNCAxNTMuOUwgOS42IDE0Ni4xNVEgOS4yNSAxNDUuOSA4Ljg1IDE0Ni4wNU0gNDUuOCAyMTIuMTVRIDQ1LjgwNDY4NzUgMjEyLjU4NjUyMzQzNzUgNDYuMSAyMTIuODUgNDYuOTk0NzI2NTYyNSAyMTMuNzI3MTQ4NDM3NSA0NyAyMTQuOTUgNDYuOTk5NDE0MDYyNSAyMTYuMTkzNTU0Njg3NSA0Ni4xIDIxNy4xIDQ1LjgwMzUxNTYyNSAyMTcuMzg5MjU3ODEyNSA0NS44IDIxNy44IDQ1LjgwMzUxNTYyNSAyMTguMjEwNzQyMTg3NSA0Ni4xIDIxOC41IDQ2LjM4OTI1NzgxMjUgMjE4Ljc5NjQ4NDM3NSA0Ni44IDIxOC44IDQ3LjIxMDc0MjE4NzUgMjE4Ljc5NjQ4NDM3NSA0Ny41IDIxOC41IDQ5LjAwMDM5MDYyNSAyMTcuMDA2NjQwNjI1IDQ5IDIxNC45NSA0OS4wMDUyNzM0Mzc1IDIxMi44NzI4NTE1NjI1IDQ3LjUgMjExLjQgNDcuMTkzOTQ1MzEyNSAyMTEuMTQwNjI1IDQ2Ljc1IDIxMS4xNSA0Ni4zNjI1IDIxMS4xNTQ0OTIxODc1IDQ2LjA1IDIxMS40NSA0NS43ODk2NDg0Mzc1IDIxMS43NTU4NTkzNzUgNDUuOCAyMTIuMTVNIDQ4LjYgMjA5LjM1USA0OC42MDQ2ODc1IDIwOS43ODY1MjM0Mzc1IDQ4LjkgMjEwLjA1IDUwLjk5NDcyNjU2MjUgMjEyLjA3NzE0ODQzNzUgNTEgMjE0Ljk1IDUwLjk5OTYwOTM3NSAyMTcuODQzMzU5Mzc1IDQ4LjkgMjE5Ljk1IDQ4LjYwMzUxNTYyNSAyMjAuMjM5MjU3ODEyNSA0OC42IDIyMC42NSA0OC42MDM1MTU2MjUgMjIxLjA2MDc0MjE4NzUgNDguOSAyMjEuMzUgNDkuMTg5MjU3ODEyNSAyMjEuNjQ2NDg0Mzc1IDQ5LjYgMjIxLjY1IDUwLjAxMDc0MjE4NzUgMjIxLjY0NjQ4NDM3NSA1MC4zIDIyMS4zNSA1My4wMDA1ODU5Mzc1IDIxOC42NTY0NDUzMTI1IDUzIDIxNC45NSA1My4wMDUwNzgxMjUgMjExLjIyMjY1NjI1IDUwLjMgMjA4LjYgNDkuOTkzOTQ1MzEyNSAyMDguMzQwNjI1IDQ5LjU1IDIwOC4zNSA0OS4xNjI1IDIwOC4zNTQ0OTIxODc1IDQ4Ljg1IDIwOC42NSA0OC41ODk2NDg0Mzc1IDIwOC45NTU4NTkzNzUgNDguNiAyMDkuMzVNIDQzIDIwNlEgNDIuNTc3NzM0Mzc1IDIwNi4wMDIzNDM3NSA0Mi4yNSAyMDYuM0wgMzcuNiAyMTEgMzUgMjExUSAzNC41ODkyNTc4MTI1IDIxMS4wMDM1MTU2MjUgMzQuMyAyMTEuMyAzNC4wMDM1MTU2MjUgMjExLjU4OTI1NzgxMjUgMzQgMjEyTCAzNCAyMThRIDM0LjAwMzUxNTYyNSAyMTguNDEwNzQyMTg3NSAzNC4zIDIxOC43IDM0LjU4OTI1NzgxMjUgMjE4Ljk5NjQ4NDM3NSAzNSAyMTlMIDM3LjYgMjE5IDQyLjMgMjIzLjdRIDQyLjU4OTI1NzgxMjUgMjIzLjk5NjQ4NDM3NSA0MyAyMjQgNDMuNDEwNzQyMTg3NSAyMjMuOTk2NDg0Mzc1IDQzLjcgMjIzLjcgNDMuOTk5NjQ4NDM3NSAyMjMuNDEwNzQyMTg3NSA0NCAxMjM2IDQ0IDEyM1EgNDMuOTk4MjQyMTg3NSAxMjIuNTg5NDUzMTI1IDQzLjcgMTIyLjMgNDMuNDA4NTkzNzUgMTIyLjAwMTU2MjUgNDMgMTIyIDQyLjU3NzczNDM3NSAxMjIuMDAyMzQzNzUgNDIuMjUgMTIyLjNMIDM3LjYgMTIxTSA0MyAxNDZRIDQyLjU3NzczNDM3NSAxNDYuMDAyMzQzNzUgNDIuMjUgMTQ2LjNMIDM3LjYgMTUxIDM1IDE1MVEgMzQuNTg5MjU3ODEyNSAxNTEuMDAzNTE1NjI1IDM0LjMgMTUxLjMgMzQuMDAzNTE1NjI1IDE1MS41ODkyNTc4MTI1IDM0IDE1MkwgMzQgMTU4USAzNC4wMDM1MTU2MjUgMTU4LjQxMDc0MjE4NzUgMzQuMyAxNTguNyAzNC41ODkyNTc4MTI1IDE1OC45OTY0ODQzNzUgMzUgMTU5TCAzNy42IDE1OSA0Mi4zIDE2My43USA0Mi41ODkyNTc4MTI1IDE2My45OTY0ODQzNzUgNDMgMTY0IDQzLjQxMDc0MjE4NzUgMTYzLjk5NjQ4NDM3NSA0My43IDE2My43IDQzLjk5NjQ4NDM3NSAxNjMuNDEwNzQyMTg3NSA0NCAxNjNMIDQ0IDE0N1EgNDMuOTk4MjQyMTg3NSAxNDYuNTg5NDUzMTI1IDQzLjcgMTQ2LjMgNDMuNDA4NTkzNzUgMTQ2LjAwMTU2MjUgNDMgMTQ2TSA0NCAxMTdRIDQzLjk5ODI0MjE4NzUgMTE2LjU4OTQ1MzEyNSA0My43IDExNi4zIDQzLjQwODU5Mzc1IDExNi4wMDE1NjI1IDQzIDExNiA0Mi41Nzc3MzQzNzUgMTE2LjAwMjM0Mzc1IDQyLjI1IDExNi4zTCAzNy42IDEyMSAzNSAxMjFRIDM0LjU4OTI1NzgxMjUgMTIxLjAwMzUxNTYyNSAzNC4zIDEyMS4zIDM0LjAwMzUxNTYyNSAxMjEuNTg5MjU3ODEyNSAzNCAxMjJMIDM0IDEyOFEgMzQuMDAzNTE1NjI1IDEyOC40MTA3NDIxODc1IDM0LjMgMTI4LjcgMzQuNTg5MjU3ODEyNSAxMjguOTk2NDg0Mzc1IDM1IDEyOUwgMzcuNiAxMjkgNDIuMyAxMzMuN1EgNDIuNTg5MjU3ODEyNSAxMzMuOTk2NDg0Mzc1IDQzIDEzNCA0My40MTA3NDIxODc1IDEzMy45OTY0ODQzNzUgNDMuNyAxMzMuNyA0My45OTY0ODQzNzUgMTMzLjQxMDc0MjE4NzUgNDQgMTMzTCA0NCAxMTdNIDQ2LjMgMTIxLjNRIDQ2LjAwMzUxNTYyNSAxMjEuNTg5MjU3ODEyNSA0NiAxMjIgNDYuMDAzNTE1NjI1IDEyMi40MTA3NDIxODc1IDQ2LjMgMTIyLjdMIDQ4LjYgMTI1IDQ2LjMgMTI3LjNRIDQ2LjAwMzUxNTYyNSAxMjcuNTg5MjU3ODEyNSA0NiAxMjggNDYuMDAzNTE1NjI1IDEyOC40MTA3NDIxODc1IDQ2LjMgMTI4LjcgNDYuNTg5MjU3ODEyNSAxMjguOTk2NDg0Mzc1IDQ3IDEyOSA0Ny40MTA3NDIxODc1IDEyOC45OTY0ODQzNzUgNDcuNyAxMjguN0wgNTAgMTI2LjQgNTIuMyAxMjguNjVRIDUyLjU4OTI1NzgxMjUgMTI4Ljk0NjQ4NDM3NSA1MyAxMjguOTUgNTMuNDEwNzQyMTg3NSAxMjguOTQ2NDg0Mzc1IDUzLjcgMTI4LjY1IDUzLjk5NjQ4NDM3NSAxMjguMzYwNzQyMTg3NSA1NCAxMjcuOTUgNTMuOTk2NDg0Mzc1IDEyNy41MzkyNTc4MTI1IDUzLjcgMTI3LjI1TCA1MS40IDEyNSA1My43IDEyMi43NVEgNTMuOTk1NTA3ODEyNSAxMjIuNDg1NzQyMTg3NSA1NCAxMjIuMDUgNTQuMDEwMTU2MjUgMTIxLjY1NTI3MzQzNzUgNTMuNyAxMjEuMzUgNTMuNDM2OTE0MDYyNSAxMjEuMDU0Mjk2ODc1IDUzIDEyMS4wNSA1Mi42MDUyNzM0Mzc1IDEyMS4wNDA4MjAzMTI1IDUyLjMgMTIxLjNMIDUwIDEyMy42IDQ3LjcgMTIxLjNRIDQ3LjQxMDc0MjE4NzUgMTIxLjAwMzUxNTYyNSA0NyAxMjEgNDYuNTg5MjU3ODEyNSAxMjEuMDAzNTE1NjI1IDQ2LjMgMTIxLjNNIDIxLjM1IDExOC42TCAyMS4zNSAxMTguNTVRIDE4LjcwODU5Mzc1IDExNS45OTUzMTI1IDE1IDExNiAxMS43NzA4OTg0Mzc1IDExNS45OTU4OTg0Mzc1IDkuMzUgMTE3Ljk1TCA3LjcgMTE2LjNRIDcuNDEwNzQyMTg3NSAxMTYuMDAzNTE1NjI1IDcgMTE2IDYuNTg5MjU3ODEyNSAxMTYuMDAzNTE1NjI1IDYuMyAxMTYuMyA2LjAwMzUxNTYyNSAxMTYuNTg5MjU3ODEyNSA2IDExN0wgNiAxMjJRIDYuMDAzNTE1NjI1IDEyMi40MTA3NDIxODc1IDYuMyAxMjIuNyA2LjU4OTI1NzgxMjUgMTIyLjk5NjQ4NDM3NSA3IDEyM0wgMTIgMTIzUSAxMi40MTA3NDIxODc1IDEyMi45OTY0ODQzNzUgMTIuNyAxMjIuNyAxMi45OTY0ODQzNzUgMTIyLjQxMDc0MjE4NzUgMTMgMTIyIDEyLjk5NjQ4NDM3NSAxMjEuNTg5MjU3ODEyNSAxMi43IDEyMS4zTCAxMC43NSAxMTkuMzVRIDEyLjYwNjgzNTkzNzUgMTE4LjAwMzcxMDkzNzUgMTUgMTE4IDE3Ljg5MTIxMDkzNzUgMTE4LjAwNDQ5MjE4NzUgMTkuOTUgMTIwTCAxOS45NSAxMjBRIDIyLjAwNDg4MjgxMjUgMTIyLjA2MTkxNDA2MjUgMjIgMTI1IDIyLjAwMjUzOTA2MjUgMTI3Ljg5MDQyOTY4NzUgMTkuOTUgMTI5Ljk1IDE3Ljg5MDQyOTY4NzUgMTMyLjAwMjUzOTA2MjUgMTUgMTMyIDEyLjEwOTU3MDMxMjUgMTMyLjAwMjUzOTA2MjUgMTAuMDUgMTI5Ljk1IDguNjYwMTU2MjUgMTI4LjU1NzIyNjU2MjUgOC4yIDEyNi43NSA4LjEyNzczNDM3NSAxMjYuMzcwNTA3ODEyNSA3Ljc1IDEyNi4xNSA3LjQyMzQzNzUgMTI1LjkzMDI3MzQzNzUgNyAxMjYgNi42MjAxMTcxODc1IDEyNi4xMjIwNzAzMTI1IDYuNCAxMjYuNDUgNi4xODA0Njg3NSAxMjYuODI2MTcxODc1IDYuMjUgMTI3LjIgNi44Mzk4NDM3NSAxMjkuNTQyNTc4MTI1IDguNjUgMTMxLjM1IDExLjI5MDQyOTY4NzUgMTMzLjk5NzQ2MDkzNzUgMTUgMTM0IDE4LjcwOTU3MDMxMjUgMTMzLjk5NzQ2MDkzNzUgMjEuMzUgMTMxLjM1IDIzLjk5NzQ2MDkzNzUgMTI4LjcwOTU3MDMxMjUgMjQgMTI1IDIzLjk5NTMxMjUgMTIxLjIzODI4MTI1IDIxLjM1IDExOC42TSA3NyAxODdMIDc3IDE5NCA3OSAxOTQgNzkgMTg5IDg0IDE4OSA4NCAxODcgNzcgMTg3TSA2NiAxODdMIDY2IDE4OSA3MSAxODkgNzEgMTk0IDczIDE5NCA3MyAxODcgNjYgMTg3TSA3MyAxNzZMIDcxIDE3NiA3MSAxODEgNjYgMTgxIDY2IDE4MyA3MyAxODMgNzMgMTc2TSA3OSAxNzZMIDc3IDE3NiA3NyAxODMgODQgMTgzIDg0IDE4MSA3OSAxODEgNzkgMTc2TSA3NyAxNjJMIDc3IDE2NCA4MiAxNjRRIDgyLjg1IDE2NCA4My40NSAxNjMuNDUgODQgMTYyLjg1IDg0IDE2MkwgODQgMTU3IDgyIDE1NyA4MiAxNjIgNzcgMTYyTSA2OCAxNTdMIDY2IDE1NyA2NiAxNjJRIDY2IDE2Mi44NSA2Ni42IDE2My40NSA2Ny4xNSAxNjQgNjggMTY0TCA3MyAxNjQgNzMgMTYyIDY4IDE2MiA2OCAxNTcgMTMgMTc4USAxMyAxNzcuNiAxMi43IDE3Ny4zIDEyLjQgMTc3IDEyIDE3N0wgMTAgMTc3USA5LjYgMTc3IDkuMyAxNzcuMyA5IDE3Ny42IDkgMTc4TCA5IDE5MlEgOSAxOTIuNCA5LjMgMTkyLjcgOS42IDE5MyAxMCAxOTNMIDEyIDE5M1EgMTIuNCAxOTMgMTIuNyAxOTIuNyAxMyAxOTIuNCAxMyAxOTJMIDEzIDE3OE0gMTkgMTc3USAxOC42IDE3NyAxOC4zIDE3Ny4zIDE4IDE3Ny42IDE4IDE3OEwgMTggMTkyUSAxOCAxOTIuNCAxOC4zIDE5Mi43IDE4LjYgMTkzIDE5IDE5M0wgMjEgMTkzUSAyMS40IDE5MyAyMS43IDE5Mi43IDIyIDE5Mi40IDIyIDE5MkwgMjIgMTc4USAyMiAxNzcuNiAyMS43IDE3Ny4zIDIxLjQgMTc3IDIxIDE3N0wgMTkgMTc3TSA3NyAxNDZMIDc3IDE0OCA4MiAxNDggODIgMTUzIDg0IDE1MyA4NCAxNDhRIDg0IDE0Ny4xNSA4My40NSAxNDYuNiA4Mi44NSAxNDYgODIgMTQ2TCA3NyAxNDZNIDY2LjYgMTQ2LjY1IDY2IDE0Ny4xNSA2NiAxNDhMIDY2IDE1MyA2OCAxNTMgNjggMTQ4IDczIDE0OCA3MyAxNDYgNjggMTQ2USA2Ny4xNSAxNDYgNjYuNiAxNDYuNk0gNjYuNSAxMTUuMU0gNjUuMSAxMTYuNSA3My42IDEyNSA2NS4xIDEzMy41IDY2LjUgMTM0LjkgNzUgMTI2LjQgODMuNSAxMzQuOSA4NC45IDEzMy41IDc2LjQgMTI1IDg0LjkgMTE2LjUgODMuNSAxMTUuMSA3NSAxMjMuNiA2Ni41IDExNS4xTSAwIDM1MFEgMCAzNzAuNyAxNC42NSA0NTIuNjggMjkuMyA0MDAgNTAgNDAwIDcwLjcgNDAwIDg1LjM1IDM4NS4zNSA0MDAgMzcwLjcgMTAwIDM3MC43IDEwMDAgMzUwIDEwMDAgMzI5LjMgODUuMzUgMzE0LjY1IDcwLjcgMzAwIDUwIDMwMCAyOS4zIDMwMCAxNC42NSA0MDQuODMgMCAzMjkuMyAwIDM1ME0gMTcuNSAzODIuNVEgNCAzNjkuMDUgNCAzNTAgNCAzMzAuOTUgMTcuNSAzMTcuNSA1MC45NSAzMDQgNTAgMzA0IDY5LjA1IDMwNCA4Mi41IDMxNy41IDk2IDMzMC45NSA5NiAzNTAgOTYgMzY5LjA1IDgyLjUgMzgyLjUgNjkuMDUgMzk2IDUwIDM5NiAzMC45NSAzOTYgMTcuNSAzODIuNU0gNDUuNCAzNDUuNFEgNDYgMzQ0LjggNDYgMzQ0IDQ2IDM0My4yIDQ1LjQgMzQyLjZMIDQxLjYgMzM4Ljg1USA0NS4yIDMzNiA1MCAzMzYgNTUuOCAzMzYgNTkuOSAzNDAuMUwgNTkuOSAzNDBRIDY0IDM0NC4xIDY0IDM1MCA2NCAzNTUuOCA1OS45IDM1OS45IDU1LjggMzY0IDUwIDM2NCA0NC4yIDM2NCA0MC4xIDM1OS45IDM3LjMgMzU3LjEgMzYuNSAzNTMuNiAzNi4zIDM1Mi43IDM1LjYgMzUyLjMgMzQuOCAzNTEuOSAzNC4xIDM1Mi4xIDMzLjIgMzUyLjMgMzQuMyAzNTEuOSAzMi42IDM1Mi4xIDMyLjYgMzUyLjkgMzIuNCAzNTMuNCAzMS44IDM1NC4zIDMxLjQgMzU2LjkgMzAuNiAzNTcuOSAzMy4yIDM1OC40IDM1LjQgMzU5LjQgMzIuNiA2MDAgMjIuOCA2MDAgMzIuOSA2MDAgMzMuNiA2MDAgMzUuNCA2MDAgMzYuMiA2MDAgMzcwIDEwMCA2MDAgNTAwIDEwMDAgMzYwIDE0MC42IDEyMS4zIDIwNCAyMjQuMiAyNDUgMjQ3LjcgMjY1IDIzNy4yIDM1MSA0MiA0NTQgMTA1IDE1NCAxNDAuNSAyOCAyMDAgMjIuOCA0OTggMjEuNyAyOTkgMjAuOSAzMDQgMjAuMyAzMDggMTkuNyAzMTYgMTkuNiAzMjEgMjAuMSAzMjggMjIuNiAzMzIgMjAuNyAzMzQuMyAxNy4zIDM0Ni41IDQxLjQgNDUuNCA3My4xIDEwMS41IDMyLjEgOTYgMzEuMiA3Ny4yIDQxLjUgMzI3LjMgMTg1IDIxOS40IDI2NCAyNTYgMjExLjEgMi41IDE2MS44IDExMS44IDI1NC4wMSA0NzcgMTA5LjcgNDQ4IDYyIDQxMDAgMjAzIDIzMSA1NS40IDE0My4zIDk5LjggNTQgNDAuNCA0OSI0Ny4wMiA2NDAuMmgzMDAgMTAuMSAxMDAwIDE0NzkuOSAxNTI0IDEzMi40IDg3NCA4MTMuMyAjLS8+PC9wYXRoPjwvZ2c+PC9zdmc+","background-size": "120px 420px",
+  "background-repeat": "no-repeat"
+}
 
-    .vjs-play-control:hover,
-    .vjs-volume-panel:hover,
-    .vjs-fullscreen-control:hover,
-    .vjs-pip-button:hover,
-    .vjs-cast-button:hover {
-      opacity: 1;
-    }
+.video-js .vjs-play-control:hover,
+.video-js .vjs-mute-control:hover,
+.video-js .vjs-fullscreen-control:hover,
+.video-js .vjs-progress-control .vjs-progress-holder:hover {
+  opacity: 1;
+}
 
-    .vjs-play-control:active,
-    .vjs-fullscreen-control:active,
-    .vjs-pip-button:active,
-    .vjs-cast-button:active {
-      transform: scale(0.96);
-    }
+.video-js .vjs-play-control:active,
+.video-js .vjs-mute-control:active,
+.video-js .vjs-fullscreen-control:active {
+  transform: scale3d(0.95, 0.95, 1);
+}
 
-    .video-js .vjs-volume-panel .vjs-volume-control {
-      width: 42px;
-      height: 64px;
-      left: -6px;
-      bottom: 42px;
-      background: transparent;
-    }
+.video-js .vjs-control:focus {
+  text-shadow: none !important;
+  outline: none !important;
+}
 
-    .vjs-slider-vertical {
-      width: 4px;
-      height: 100%;
-      border-radius: 2px;
-      background: rgba(255,255,255,0.2);
-    }
+.video-js .vjs-play-control.vjs-paused .vjs-icon-placeholder {
+  background-position: -10px -150px;
+}
 
-    .vjs-volume-level {
-      background: #fff;
-      border-radius: 2px;
-    }
+.video-js .vjs-play-control.vjs-playing .vjs-icon-placeholder {
+  background-position: -10px -180px;
+}
 
-    .vjs-big-play-button {
-      display: block !important;
-      width: 100px;
-      height: 100px;
-      left: 50%;
-      top: 50%;
-      margin-left: -50px;
-      margin-top: -50px;
-      border: none;
-      background: rgba(0,0,0,0.28);
-      border-radius: 50%;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.2s linear, transform 0.12s ease;
-    }
+.video-js .vjs-play-control.vjs-ended .vjs-icon-placeholder {
+  background-position: -10px -120px;
+}
 
-    .video-js.vjs-paused .vjs-big-play-button,
-    .video-js.vjs-ended .vjs-big-play-button {
-      opacity: 1;
-      pointer-events: auto;
-    }
+.video-js .vjs-mute-control .vjs-icon-placeholder {
+  background-position: -40px -120px;
+}
 
-    .vjs-big-play-button:active {
-      transform: scale(0.96);
-    }
+.video-js .vjs-mute-control.vjs-vol-0 .vjs-icon-placeholder {
+  background-position: -40px -120px;
+}
 
-    .video-js .vjs-big-play-button .vjs-icon-placeholder {
-      display: none;
-    }
+.video-js .vjs-mute-control.vjs-vol-1 .vjs-icon-placeholder {
+  background-position: -40px -150px;
+}
 
-    .video-js .vjs-big-play-button::before,
-    .video-js .vjs-big-play-button::after {
-      content: "";
-      position: absolute;
-      inset: 0;
-      border-radius: 50%;
-    }
+.video-js .vjs-mute-control.vjs-vol-2 .vjs-icon-placeholder {
+  background-position: -40px -180px;
+}
 
-    .video-js .vjs-big-play-button::before {
-      background: rgba(0,0,0,0.3);
-      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.2);
-    }
+.video-js .vjs-mute-control.vjs-vol-3 .vjs-icon-placeholder {
+  background-position: -40px -210px;
+}
 
-    .video-js .vjs-big-play-button::after {
-      left: 40%;
-      right: 35%;
-      top: 25%;
-      bottom: 25%;
-      background: #fff;
-      clip-path: polygon(0 0, 100% 50%, 0 100%);
-      transform: translateX(4px);
-    }
+.video-js .vjs-fullscreen-control .vjs-icon-placeholder {
+  background-position: -70px -150px;
+}
 
-    .status {
-      position: absolute;
-      left: 16px;
-      bottom: 58px;
-      z-index: 10;
-      padding: 7px 10px;
-      border-radius: 999px;
-      background: rgba(0,0,0,0.38);
-      border: 1px solid rgba(255,255,255,0.12);
-      color: rgba(255,255,255,0.85);
-      font-size: 12px;
-      letter-spacing: 0.02em;
-      opacity: 0;
-      transform: translateY(6px);
-      transition: opacity 0.2s ease, transform 0.2s ease;
-      pointer-events: none;
-    }
+.video-js.vjs-fullscreen .vjs-fullscreen-control .vjs-icon-placeholder {
+  background-position: -70px -180px;
+}
 
-    .status.show {
-      opacity: 1;
-      transform: translateY(0);
-    }
+.video-js .vjs-volume-panel {
+  width: 40px !important;
+  height: 40px !important;
+  margin: 0px !important;
+}
 
-    @media (max-width: 620px) {
-      .player-shell {
-        width: 100vw;
-        height: 100vh;
-      }
-    }
+.vjs-volume-bar.vjs-slider-vertical {
+  width: 4px;
+  height: 100%;
+  margin: 0px auto;
+  border-radius: 2px;
+}
+
+.video-js .vjs-volume-level {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  background-color: #fff;
+  border-radius: 2px;
+  box-shadow: 0px 1px 1px rgba(0, 0, 0, 0.25);
+}
+
+.vjs-slider-vertical .vjs-volume-level::before {
+  position: absolute;
+  top: -6px;
+  left: -4px;
+  z-index: 1;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background-color: #FFF;
+  content: "";
+  box-shadow: 0px 1px 1px rgba(0, 0, 0, 0.25);
+}
+
+.video-js .vjs-big-play-button {
+  display: block !important;
+  position: absolute;
+  width: 100px;
+  height: 100px;
+  left: 50%;
+  top: 50%;
+  margin-left: -50px;
+  margin-top: -50px;
+  background-color: transparent !important;
+  border: none;
+  outline: none !important;
+  transition: opacity 0.25s linear, transform 0.1s ease-out !important;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.vjs-big-play-button .vjs-icon-placeholder {
+  display: none;
+}
+
+.video-js.vjs-paused .vjs-big-play-button,
+.video-js.vjs-ended .vjs-big-play-button {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.vjs-big-play-button::before,
+.vjs-big-play-button::after {
+  content: "";
+  position: absolute;
+  transform: translate3d(0, 0, 0);
+}
+
+.vjs-big-play-button::before {
+  left: 4%;
+  right: 4%;
+  top: 4%;
+  bottom: 4%;
+  border-radius: 50%;
+  background-color: #000000;
+  opacity: 0.25;
+  transition: opacity 0.1s linear;
+}
+
+.vjs-big-play-button:hover::before {
+  opacity: 0.5;
+}
+
+.vjs-big-play-button::after {
+  left: -10%;
+  right: -10%;
+  top: -10%;
+  bottom: -10%;
+  background-position: center top;
+  opacity: 0.75;
+  transition: opacity 0.1s linear;
+}
+
+.video-js.vjs-ended .vjs-big-play-button::after {
+  background-position: center bottom;
+}
+
+.vjs-big-play-button:hover::after {
+  opacity: 1;
+}
+
+.vjs-big-play-button:active {
+  transform: scale3d(0.95, 0.95, 1);
+}
+
+.video-js .vjs-progress-control .vjs-progress-holder {
+  font-size: 1em !important;
+  height: 12px;
+  background-color: transparent;
+  box-shadow: 0px 1px 1px rgba(0, 0, 0, 0.25);
+}
+
+.video-js .vjs-progress-control .vjs-progress-holder::before {
+  content: "";
+  position: absolute;
+  left: 0px;
+  right: 0px;
+  top: 4px;
+  height: 4px;
+  border-radius: 2px;
+  background-color: rgba(255, 255, 255, 0.25);
+  box-shadow: 0px 1px 1px rgba(0, 0, 0, 0.25);
+}
+
+.video-js .vjs-slider,
+.video-js .vjs-progress-holder .vjs-play-progress,
+.video-js .vjs-progress-holder .vjs-load-progress,
+.video-js .vjs-progress-holder .vjs-load-progress div {
+  height: 4px;
+  margin-top: 4px;
+  border-radius: 2px;
+  background-color: rgba(255, 255, 255, 0.25);
+}
+
+.video-js .vjs-progress-holder .vjs-load-progress div {
+  margin-top: 0px;
+}
+
+.video-js .vjs-progress-holder .vjs-load-progress {
+  transition: width 1s ease-in-out !important;
+}
+
+.video-js .vjs-progress-holder .vjs-play-progress {
+  background-color: white;
+}
+
+.video-js .vjs-play-progress::before {
+  content: "";
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  right: -6px;
+  top: -4px;
+  border-radius: 50%;
+  background-color: #FFFFFF;
+  box-shadow: 0px 1px 1px rgba(0, 0, 0, 0.25);
+}
+
+.video-js .vjs-time-tooltip,
+.video-js .vjs-mouse-display {
+  display: none !important;
+}
+
+.video-js .vjs-progress-control {
+  cursor: default;
+}
+
+.video-js .vjs-current-time {
+  display: block;
+}
+
+.video-js .vjs-time-divider {
+  display: block;
+}
+
+.video-js .vjs-duration {
+  display: block;
+}
+
+.video-js .vjs-remaining-time {
+  display: none;
+}
+
+.video-js .vjs-time-control {
+  position: relative;
+  min-width: auto;
+  font-size: 12px;
+  line-height: 40px;
+  padding-left: 5px;
+  padding-right: 5px;
+  color: rgba(255, 255, 255, 0.75);
+  text-shadow: 0px 1px 1px rgba(0, 0, 0, 0.25);
+  user-select: none;
+}
+
+.video-js .vjs-current-time {
+  padding-left: 10px;
+}
+
+/* Foltyn+ controls: neutral player controls, no visible brand mark. */
+.video-js .vjs-pip-button,
+.video-js .vjs-cast-button {
+  width: 36px;
+  height: 30px;
+  margin: 5px 2px;
+  padding: 0;
+  color: #fff;
+  opacity: 0.78;
+  cursor: pointer;
+  transition: opacity 0.1s linear, color 0.1s linear;
+}
+
+.video-js .vjs-pip-button:hover,
+.video-js .vjs-cast-button:hover,
+.video-js .vjs-pip-active,
+.video-js .vjs-cast-connected { opacity: 1; }
+
+.video-js .vjs-pip-button .vjs-icon-placeholder,
+.video-js .vjs-pip-button .vjs-icon-placeholder svg,
+.video-js .vjs-cast-button .vjs-icon-placeholder,
+.video-js .vjs-cast-button .vjs-icon-placeholder svg {
+  display: block;
+  width: 20px;
+  height: 20px;
+  margin: auto;
+  fill: currentColor;
+}
+
+.video-js .vjs-pip-active,
+.video-js .vjs-cast-connected { color: #55c1ff; }
+
+@media (max-width: 520px) {
+  .player { width: min(100vw, 640px); height: auto; aspect-ratio: 16 / 9; }
+  .video-js .vjs-pip-button, .video-js .vjs-cast-button { width: 30px; margin-left: 0; margin-right: 0; }
+}
+
+    html, body { width: 100%; height: 100%; overflow: hidden; }
+    body { position: fixed; inset: 0; }
+    .player { width: min(100vw, 960px); height: min(100vh, 540px); aspect-ratio: 16 / 9; }
+    @media (max-aspect-ratio: 16 / 9) { .player { width: 100vw; height: auto; } }
   </style>
 </head>
 <body>
-  <main class="player-shell">
-    <video class="video-js" controls preload="metadata" playsinline aria-label="Foltyn video"></video>
-    <div id="status" class="status" role="status" aria-live="polite"></div>
+  <main class="player">
+    <video class="video-js" controls preload="metadata" playsinline aria-label="Foltyn video">
+      Your browser does not support HTML video.
+    </video>
   </main>
 
+  <script>
+    window.__onGCastApiAvailable = function (available) {
+      window.foltynCastApiAvailable = available;
+      window.dispatchEvent(new CustomEvent('foltyn-cast-api-available', { detail: available }));
+    };
+  </script>
   <script src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"></script>
   <script src="https://vjs.zencdn.net/7.0.3/video.js"></script>
   <script>
-    (() => {
-      const $video = document.querySelector('.video-js');
-      const statusEl = document.getElementById('status');
-      const setStatus = (message) => {
-        statusEl.textContent = message || '';
-        statusEl.classList.toggle('show', !!message);
-      };
+/* Foltyn+ Video.js skin enhancements — brand is code/document metadata only. */
+const $player = document.querySelector('.player');
+const $video = document.querySelector('.video-js');
+const videojs = window.videojs;
+const Button = videojs.getComponent('Button');
 
-      const videojs = window.videojs;
-      const Button = videojs.getComponent('Button');
+class PictureInPictureButton extends Button {
+  constructor(player, options) {
+    super(player, options);
+    this.controlText('Picture in Picture');
+    this.addClass('vjs-pip-button');
+    const icon = this.el().querySelector('.vjs-icon-placeholder');
+    if (icon) {
+      icon.innerHTML = '<svg aria-hidden="true" viewBox="0 0 24 24" focusable="false"><path d="M19 7h-8v6h8V7Zm2-4H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2Zm0 16H3V5h18v14Z" fill="currentColor"/></svg>';
+    }
+    this.updateAvailability();
+    $video.addEventListener('enterpictureinpicture', () => this.updateState(true));
+    $video.addEventListener('leavepictureinpicture', () => this.updateState(false));
+  }
 
-      class PictureInPictureButton extends Button {
-        constructor(player, options) {
-          super(player, options);
-          this.addClass('vjs-pip-button');
-          this.controlText('Picture in Picture');
-          const icon = this.el().querySelector('.vjs-icon-placeholder');
-          if (icon) {
-            icon.innerHTML = '<svg aria-hidden="true" viewBox="0 0 24 24" focusable="false"><path d="M19 7h-8v6h8V7Zm2-4H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2Zm0 16H3V5h18v14Z" fill="currentColor"/></svg>';
-          }
-          this.updateAvailability();
-          $video.addEventListener('enterpictureinpicture', () => this.updateState(true));
-          $video.addEventListener('leavepictureinpicture', () => this.updateState(false));
-        }
+  updateAvailability() {
+    const supported = document.pictureInPictureEnabled && typeof $video.requestPictureInPicture === 'function';
+    if (supported) this.show();
+    else this.hide();
+  }
 
-        updateAvailability() {
-          const supported = document.pictureInPictureEnabled && typeof $video.requestPictureInPicture === 'function';
-          if (supported) this.show(); else this.hide();
-        }
+  updateState(active) {
+    this.el().classList.toggle('vjs-pip-active', active);
+    this.controlText(active ? 'Exit Picture in Picture' : 'Picture in Picture');
+  }
 
-        updateState(active) {
-          this.el().classList.toggle('vjs-pip-active', active);
-          this.controlText(active ? 'Exit Picture in Picture' : 'Picture in Picture');
-        }
-
-        async handleClick() {
-          if (document.pictureInPictureElement === $video) {
-            await document.exitPictureInPicture();
-          } else if (document.pictureInPictureEnabled && typeof $video.requestPictureInPicture === 'function') {
-            try { await $video.requestPictureInPicture(); } catch (error) { console.warn('PIP failed:', error); }
-          }
-        }
+  async handleClick() {
+    if (document.pictureInPictureElement === $video) {
+      await document.exitPictureInPicture();
+    } else if (document.pictureInPictureEnabled && typeof $video.requestPictureInPicture === 'function') {
+      try {
+        await $video.requestPictureInPicture();
+      } catch (error) {
+        console.warn('Foltyn+ Picture-in-Picture could not start:', error);
       }
+    }
+  }
+}
 
-      class CastButton extends Button {
-        constructor(player, options) {
-          super(player, options);
-          this.addClass('vjs-cast-button');
-          this.controlText('Cast to device');
-          this.hide();
-          const icon = this.el().querySelector('.vjs-icon-placeholder');
-          if (icon) {
-            icon.innerHTML = '<svg aria-hidden="true" viewBox="0 0 24 24" focusable="false"><path d="M2 18v3h3a3 3 0 0 0-3-3Zm0-5v3a5 5 0 0 1 5 5h3a8 8 0 0 0-8-8Zm0-5v3c5.52 0 10 4.48 10 10h3C15 14.16 9.84 9 2 9Zm18-6H4a2 2 0 0 0-2 2v2h2V7h16v10h-8v2h8a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2Z" fill="currentColor"/></svg>';
-          }
-        }
+class CastButton extends Button {
+  constructor(player, options) {
+    super(player, options);
+    this.controlText('Cast to device');
+    this.addClass('vjs-cast-button');
+    this.hide();
+    const icon = this.el().querySelector('.vjs-icon-placeholder');
+    if (icon) {
+      icon.innerHTML = '<svg aria-hidden="true" viewBox="0 0 24 24" focusable="false"><path d="M2 18v3h3a3 3 0 0 0-3-3Zm0-5v3a5 5 0 0 1 5 5h3a8 8 0 0 0-8-8Zm0-5v3c5.52 0 10 4.48 10 10h3C15 14.16 9.84 9 2 9Zm18-6H4a2 2 0 0 0-2 2v2h2V7h16v10h-8v2h8a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2Z" fill="currentColor"/></svg>';
+    }
+  }
 
-        async handleClick() {
-          if (!window.cast || !window.cast.framework) return;
-          const context = window.cast.framework.CastContext.getInstance();
-          try {
-            let session = context.getCurrentSession();
-            if (!session) session = await context.requestSession();
-            if (!session) return;
-            const source = $video.querySelector('source');
-            const contentType = (source && source.type) || 'video/mp4';
-            const mediaInfo = new window.chrome.cast.media.MediaInfo($video.currentSrc || $video.src, contentType);
-            mediaInfo.streamType = window.chrome.cast.media.StreamType.BUFFERED;
-            mediaInfo.metadata = new window.chrome.cast.media.GenericMediaMetadata();
-            mediaInfo.metadata.title = $video.getAttribute('aria-label') || 'Video';
-            await session.loadMedia(new window.chrome.cast.media.LoadRequest(mediaInfo));
-          } catch (error) {
-            if (error && error.code !== 'cancel') console.warn('Cast failed:', error);
-          }
-        }
-      }
+  async handleClick() {
+    if (!window.cast || !window.cast.framework) return;
+    const context = window.cast.framework.CastContext.getInstance();
+    try {
+      let session = context.getCurrentSession();
+      if (!session) session = await context.requestSession();
+      if (!session) return;
+      const source = $video.querySelector('source');
+      const contentType = (source && source.type) || 'video/mp4';
+      const mediaInfo = new window.chrome.cast.media.MediaInfo($video.currentSrc || $video.src, contentType);
+      mediaInfo.streamType = window.chrome.cast.media.StreamType.BUFFERED;
+      mediaInfo.metadata = new window.chrome.cast.media.GenericMediaMetadata();
+      mediaInfo.metadata.title = $video.getAttribute('aria-label') || 'Video';
+      await session.loadMedia(new window.chrome.cast.media.LoadRequest(mediaInfo));
+    } catch (error) {
+      if (error && error.code !== 'cancel') console.warn('Foltyn+ Cast could not start:', error);
+    }
+  }
+}
 
-      videojs.registerComponent('PictureInPictureButton', PictureInPictureButton);
-      videojs.registerComponent('FoltynCastButton', CastButton);
+videojs.registerComponent('PictureInPictureButton', PictureInPictureButton);
+videojs.registerComponent('FoltynCastButton', CastButton);
 
-      const player = videojs($video, {
-        controlBar: {
-          children: ['playToggle', 'progressControl', 'currentTimeDisplay', 'timeDivider', 'durationDisplay', 'volumePanel', 'PictureInPictureButton', 'FoltynCastButton', 'fullscreenToggle'],
-          volumeMenuButton: { inline: false, vertical: true },
-          volumePanel: { inline: false },
-          progressControl: { seekBar: true },
-          currentTimeDisplay: true,
-          timeDivider: true,
-          durationDisplay: true,
-          remainingTimeDisplay: false,
-          subtitlesButton: false,
-          captionsButton: false,
-          audioTrackButton: false
-        }
-      });
+const vjs = videojs($video, {
+  controlBar: {
+    children: ['playToggle', 'progressControl', 'currentTimeDisplay', 'timeDivider', 'durationDisplay',
+      'volumePanel', 'PictureInPictureButton', 'FoltynCastButton', 'fullscreenToggle'],
+    volumeMenuButton: { inline: false, vertical: true },
+    volumePanel: { inline: false },
+    progressControl: { seekBar: true },
+    textTrackSettings: false,
+    currentTimeDisplay: true,
+    timeDivider: true,
+    durationDisplay: true,
+    remainingTimeDisplay: false,
+    subtitlesButton: false,
+    captionsButton: false,
+    audioTrackButton: false
+  }
+});
 
-      function updateCastButton(available) {
-        const castButton = player.getChild('controlBar').getChild('FoltynCastButton');
-        if (!available || !window.cast || !window.chrome || !window.chrome.cast) {
-          castButton.hide();
-          return;
-        }
-        const context = window.cast.framework.CastContext.getInstance();
-        context.setOptions({
-          receiverApplicationId: window.chrome.cast.media.DEFAULT_MEDIA_RECEIVER_APP_ID,
-          autoJoinPolicy: window.cast.AutoJoinPolicy.ORIGIN_SCOPED
-        });
-        castButton.show();
-        context.addEventListener(window.cast.framework.CastContextEventType.SESSION_STATE_CHANGED, (event) => {
-          const connected = event.sessionState === window.cast.framework.SessionState.SESSION_STARTED || event.sessionState === window.cast.framework.SessionState.SESSION_RESUMED;
-          castButton.el().classList.toggle('vjs-cast-connected', connected);
-        });
-      }
+vjs.on('ready', () => {
+  $player.classList.add('ready');
+  const pipButton = vjs.getChild('controlBar').getChild('PictureInPictureButton');
+  pipButton.updateAvailability();
+  const progress = vjs.el().querySelector('.vjs-play-progress.vjs-slider-bar');
+  vjs.on('seeking', () => {
+    if (progress && Number.isFinite(vjs.duration()) && vjs.duration() > 0) {
+      progress.style.width = `${(vjs.currentTime() / vjs.duration()) * 100}%`;
+    }
+  });
+});
 
-      window.__onGCastApiAvailable = function (available) {
-        window.foltynCastApiAvailable = available;
-        window.dispatchEvent(new CustomEvent('foltyn-cast-api-available', { detail: available }));
-      };
-      window.addEventListener('foltyn-cast-api-available', (event) => updateCastButton(event.detail));
-      if (typeof window.foltynCastApiAvailable === 'boolean') updateCastButton(window.foltynCastApiAvailable);
+function onCastApiAvailable(available) {
+  const castButton = vjs.getChild('controlBar').getChild('FoltynCastButton');
+  if (!available || !window.cast || !window.chrome || !window.chrome.cast) {
+    castButton.hide();
+    return;
+  }
+  const context = window.cast.framework.CastContext.getInstance();
+  context.setOptions({
+    receiverApplicationId: window.chrome.cast.media.DEFAULT_MEDIA_RECEIVER_APP_ID,
+    autoJoinPolicy: window.cast.AutoJoinPolicy.ORIGIN_SCOPED
+  });
+  castButton.show();
+  context.addEventListener(window.cast.framework.CastContextEventType.SESSION_STATE_CHANGED, (event) => {
+    const connected = event.sessionState === window.cast.framework.SessionState.SESSION_STARTED ||
+      event.sessionState === window.cast.framework.SessionState.SESSION_RESUMED;
+    castButton.el().classList.toggle('vjs-cast-connected', connected);
+  });
+}
 
-      const tmdbId = new URLSearchParams(window.location.search).get('id');
-      if (tmdbId) {
-        fetch(`/api/movie?id=${encodeURIComponent(tmdbId)}`)
-          .then((response) => {
-            if (!response.ok) throw new Error(`Source request failed (${response.status})`);
-            return response.json();
-          })
-          .then((payload) => {
-            const source = payload.servers?.find((server) => server.status === 'ready' && server.url)?.url;
-            if (!source) throw new Error('No playable source was returned');
-            player.src({ src: source, type: 'application/x-mpegURL' });
-            player.play().catch(() => {});
-          })
-          .catch((error) => {
-            console.error('[player] source error:', error);
-            player.error({ code: 4, message: error.message });
-            setStatus('Playback unavailable');
-          });
-      } else {
-        player.error({ code: 4, message: 'Missing TMDB ID' });
-        setStatus('Missing TMDB ID');
-      }
-    })();
+window.addEventListener('foltyn-cast-api-available', (event) => onCastApiAvailable(event.detail));
+if (typeof window.foltynCastApiAvailable === 'boolean') onCastApiAvailable(window.foltynCastApiAvailable);
+
+const tmdbId = new URLSearchParams(window.location.search).get('id');
+if (tmdbId) {
+  fetch(`/api/movie?id=${encodeURIComponent(tmdbId)}`)
+    .then((response) => {
+      if (!response.ok) throw new Error(`Source request failed (${response.status})`);
+      return response.json();
+    })
+    .then((payload) => {
+      const source = payload.servers?.find((server) => server.status === 'ready' && server.url)?.url;
+      if (!source) throw new Error('No playable source was returned');
+      vjs.src({ src: source, type: 'application/x-mpegURL' });
+      vjs.play().catch(() => {});
+    })
+    .catch((error) => {
+      console.error('[v0] Player source error:', error);
+      vjs.error({ code: 4, message: error.message });
+    });
+} else {
+  vjs.error({ code: 4, message: 'Missing TMDB ID' });
+}
+
   </script>
 </body>
 </html>
