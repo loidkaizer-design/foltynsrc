@@ -528,6 +528,84 @@ async function movieApiHandler(req, res) {
     }
 }
 
+function embedPlayerHandler(req, res) {
+    const tmdb = String(req.params.id || '').replace(/[^0-9]/g, '');
+    if (!tmdb) return res.status(400).type('html').send('<h1>Missing TMDB ID</h1>');
+
+    const tmdbJson = JSON.stringify(tmdb);
+    res.type('html').send(`<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>foltynsrc player</title>
+<style>
+:root { color-scheme: dark; }
+* { box-sizing: border-box; }
+html, body { width: 100%; min-height: 100%; margin: 0; background: #050505; }
+body { display: grid; place-items: center; padding: 18px; color: #f5f5f5; font: 14px/1.45 Inter, ui-sans-serif, system-ui, sans-serif; }
+.player-shell { width: min(100%, 1100px); }
+.player-frame { position: relative; overflow: hidden; aspect-ratio: 16 / 9; background: #000; border: 1px solid rgba(255,255,255,.16); border-radius: 14px; box-shadow: 0 24px 80px rgba(0,0,0,.45); }
+video { display: block; width: 100%; height: 100%; background: #000; }
+.overlay { position: absolute; inset: 0; display: grid; place-items: center; padding: 24px; background: rgba(0,0,0,.72); text-align: center; }
+.overlay[hidden] { display: none; }
+.overlay p { max-width: 560px; margin: 0; color: #f0caca; }
+.player-footer { display: flex; justify-content: space-between; gap: 12px; padding: 10px 2px 0; color: #777; font-size: 11px; }
+.player-footer a { color: #aaa; }
+</style>
+</head>
+<body>
+<main class="player-shell" aria-label="foltynsrc video player">
+  <div class="player-frame">
+    <video id="video" controls playsinline preload="metadata"></video>
+    <div id="overlay" class="overlay"><p id="message">Loading source…</p></div>
+  </div>
+  <div class="player-footer"><span id="title">foltynsrc</span><a href="/" target="_blank" rel="noopener">Licensed by Foltyn</a></div>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+<script>
+const tmdb = ${tmdbJson};
+const video = document.getElementById('video');
+const overlay = document.getElementById('overlay');
+const message = document.getElementById('message');
+const title = document.getElementById('title');
+const showError = (text) => { message.textContent = text; overlay.hidden = false; };
+const hideOverlay = () => { overlay.hidden = true; };
+(async () => {
+  try {
+    const response = await fetch('/api/movie?id=' + encodeURIComponent(tmdb), { headers: { accept: 'application/json' } });
+    const data = await response.json();
+    if (!response.ok || !data.success) throw new Error(data.error || 'Unable to load movie sources');
+    title.textContent = data.title || 'foltynsrc';
+    const source = (data.servers || []).find((server) => server.status === 'ready' && server.url);
+    if (!source) throw new Error('No playable source was returned');
+    const streamUrl = source.url;
+    video.addEventListener('playing', hideOverlay, { once: true });
+    video.addEventListener('error', () => showError('Playback error. Please try another source.'), { once: true });
+    if (video.canPlayType('application/vnd.apple.mpegurl')) {
+      video.src = streamUrl;
+    } else if (window.Hls && Hls.isSupported()) {
+      const hls = new Hls({ enableWorker: true });
+      hls.loadSource(streamUrl);
+      hls.attachMedia(video);
+      hls.on(Hls.Events.MANIFEST_PARSED, () => hideOverlay());
+      hls.on(Hls.Events.ERROR, (_event, details) => {
+        if (details.fatal) showError('Playback error. Please try another source.');
+      });
+    } else {
+      throw new Error('This browser does not support HLS playback');
+    }
+  } catch (error) {
+    showError(error instanceof Error ? error.message : 'Unable to load video');
+  }
+})();
+</script>
+</body>
+</html>`);
+}
+
+app.get('/api/movie/e/:id', embedPlayerHandler);
 app.get(['/api', '/api/movie'], movieApiHandler);
 
 // Export for Vercel serverless (also runnable locally with `node server.js`)
