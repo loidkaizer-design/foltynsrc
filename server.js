@@ -482,6 +482,24 @@ app.get('/', (_req, res) => {
 
 app.get('/proxy', proxyHls);
 
+app.get('/api/token', async (req, res) => {
+    const origin = String(req.query.origin || '').trim();
+    let parsed;
+    try {
+        parsed = new URL(origin);
+        if (!['http:', 'https:'].includes(parsed.protocol) || parsed.pathname !== '/') throw new Error('invalid origin');
+    } catch (error) {
+        return res.status(400).json({ success: false, error: 'origin must be an absolute HTTP(S) origin' });
+    }
+    try {
+        const token = await mintToken(parsed.origin, true);
+        if (!token) return res.status(502).json({ success: false, error: 'provider returned no token' });
+        return res.json({ success: true, origin: parsed.origin, token });
+    } catch (error) {
+        return res.status(502).json({ success: false, error: 'provider token request failed: ' + error.message });
+    }
+});
+
 async function movieApiHandler(req, res) {
     const tmdb = req.query.id;
     const namingMode = 'universe';
