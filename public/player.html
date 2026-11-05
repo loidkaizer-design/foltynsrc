@@ -191,11 +191,10 @@ P.addEventListener('keydown',e=>{const k=e.key.toLowerCase(),r=P.getBoundingClie
  else if(k==='m')$('mute').click();else if(k==='f')fs();else if(k==='p'&&!$('pip').hidden)$('pip').click();else h=false;
  if(h)e.preventDefault()});
 async function mintClientToken(origin){
- const response=await fetch(origin+'/generate.php',{credentials:'omit'});
- if(!response.ok)throw new Error('generate.php returned HTTP '+response.status);
- let token=(await response.text()).trim();
- try{const parsed=JSON.parse(token);if(typeof parsed==='string')token=parsed;else if(parsed&&typeof parsed==='object')token=parsed.token||parsed.data||parsed.string||parsed.result||''}catch(_){/* plain-text token */}
- if(!token)throw new Error('generate.php returned an empty token');return token;
+ const response=await fetch('/api/token?origin='+encodeURIComponent(origin),{credentials:'same-origin'});
+ if(!response.ok){const details=await response.json().catch(()=>({}));throw new Error(details.error||'token request failed with HTTP '+response.status)}
+ const payload=await response.json();
+ if(!payload.token)throw new Error('provider returned an empty token');return payload.token;
 }
 function relayUrl(url){return location.origin+'/proxy?url='+encodeURIComponent(url)}
 async function loadMovieId(id){

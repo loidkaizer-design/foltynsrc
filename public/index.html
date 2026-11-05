@@ -147,16 +147,14 @@
     // deliberately not moved to the Vercel server.
     async function mintClientToken(origin) {
         if (!origin) throw new Error('no provider host returned for this source');
-        const response = await fetch(origin + '/generate.php', { credentials: 'omit' });
-        if (!response.ok) throw new Error('generate.php returned HTTP ' + response.status);
-        let token = (await response.text()).trim();
-        try {
-            const parsed = JSON.parse(token);
-            if (typeof parsed === 'string') token = parsed;
-            else if (parsed && typeof parsed === 'object') token = parsed.token || parsed.data || parsed.string || parsed.result || '';
-        } catch (_) { /* plain-text token */ }
-        if (!token) throw new Error('generate.php returned an empty token');
-        return token;
+const response = await fetch('/api/token?origin=' + encodeURIComponent(origin), { credentials: 'same-origin' });
+ if (!response.ok) {
+ const details = await response.json().catch(() => ({}));
+ throw new Error(details.error || 'token request failed with HTTP ' + response.status);
+ }
+ const payload = await response.json();
+ if (!payload.token) throw new Error('provider returned an empty token');
+ return payload.token;
     }
 
     function bindCardActions(card, url) {
