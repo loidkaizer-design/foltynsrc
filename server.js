@@ -553,6 +553,24 @@ function embedPlayerHandler(req, res) {
 }
 
 app.get('/api/movie/e/:tmdb_id', embedPlayerHandler);
+app.get('/src/movie/:tmdb_id', async (req, res) => {
+  try {
+    const result = await getPlaylist(String(req.params.tmdb_id));
+    const source = result.servers.find((server) => server.status === 'ready' && server.url);
+
+    if (!source) {
+      return res.status(404).type('text/plain').send('No playable source found');
+    }
+
+    const forwardedProto = req.headers['x-forwarded-proto'];
+    const protocol = (Array.isArray(forwardedProto) ? forwardedProto[0] : forwardedProto)?.split(',')[0] || req.protocol;
+    const origin = `${protocol}://${req.get('host')}`;
+    const proxyUrl = `${origin}/proxy?url=${encodeURIComponent(source.url)}`;
+    return res.type('text/plain').send(proxyUrl);
+  } catch (error) {
+    return res.status(502).type('text/plain').send(error.message || 'Source lookup failed');
+  }
+});
 app.get(['/api', '/api/movie'], movieApiHandler);
 
 // Export for Vercel serverless (also runnable locally with `node server.js`)
