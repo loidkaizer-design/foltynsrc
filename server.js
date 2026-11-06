@@ -556,17 +556,43 @@ app.get('/api/movie/e/:tmdb_id', embedPlayerHandler);
 app.get('/src/movie/:tmdb_id', async (req, res) => {
   try {
     const result = await getPlaylist(String(req.params.tmdb_id));
-    const source = result.servers.find((server) => server.status === 'ready' && server.url);
-
-    if (!source) {
-      return res.status(404).type('text/plain').send('No playable source found');
-    }
-
+    const galaxyNames = [
+      'Milkyway',
+      'Andromeda',
+      'Sombrero',
+      'Whirlpool',
+      'Triangulum',
+      'Pinwheel',
+      'Cartwheel',
+      'Centaurus A',
+      'Messier 87',
+      'Large Magellanic Cloud',
+    ];
     const forwardedProto = req.headers['x-forwarded-proto'];
     const protocol = (Array.isArray(forwardedProto) ? forwardedProto[0] : forwardedProto)?.split(',')[0] || req.protocol;
     const origin = `${protocol}://${req.get('host')}`;
-    const proxyUrl = `${origin}/proxy?url=${encodeURIComponent(source.url)}`;
-    return res.type('text/plain').send(proxyUrl);
+
+    const sources = await Promise.all(result.servers.map(async (server, index) => {
+      try {
+        const mintedUrl = await stampStreamUrl(server.raw);
+        return {
+          name: galaxyNames[index] || `Galaxy ${index + 1}`,
+          proxyUrl: `${origin}/proxy?url=${encodeURIComponent(mintedUrl)}`,
+        };
+      } catch (error) {
+        return null;
+      }
+    }));
+
+    const availableSources = sources.filter(Boolean);
+    if (!availableSources.length) {
+      return res.status(404).type('text/plain').send('No playable source found');
+    }
+
+    const body = availableSources
+      .map(({ name, proxyUrl }) => `source = ("${name}")\\nmovie_proxy_url = ("${proxyUrl}")`)
+      .join('\\n\\n');
+    return res.type('text/plain').send(body);
   } catch (error) {
     return res.status(502).type('text/plain').send(error.message || 'Source lookup failed');
   }
