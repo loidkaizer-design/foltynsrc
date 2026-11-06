@@ -72,11 +72,21 @@ function serverName(index, mode) {
 
 /* ---------- small helpers ---------- */
 function fixEscaped(u) {
-    return u.replace(/\\u0026/g, '&').replace(/\\u003d/g, '=');
+    return u
+        .replace(/\\u0026/g, '&')
+        .replace(/\\u003d/g, '=')
+        .replace(/&amp;/g, '&');
 }
 function extract(html, key) {
-    const m = html.match(new RegExp('"' + key + '"\\s*:\\s*"([^"]+)"'));
-    return m ? fixEscaped(m[1]) : null;
+    const patterns = [
+        new RegExp("[\\\"']" + key + "[\\\"']\\s*:\\s*[\\\"']([^\\\"']+)[\\\"']"),
+        new RegExp("\\b" + key + "\\s*[:=]\\s*[\\\"']([^\\\"']+)[\\\"']"),
+    ];
+    for (const pattern of patterns) {
+        const match = html.match(pattern);
+        if (match) return fixEscaped(match[1]);
+    }
+    return null;
 }
 function b64dec(s) {
     return new Uint8Array(Buffer.from(s, 'base64'));
