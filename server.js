@@ -587,7 +587,7 @@ app.get('/src/movie/:tmdb_id', async (req, res) => {
         const mintedUrl = await stampStreamUrl(server.raw);
         return {
           name: galaxyNames[index] || `Galaxy ${index + 1}`,
-          proxyUrl: `${origin}/proxy?url=${encodeURIComponent(mintedUrl)}`,
+          proxyUrl: `${origin}/proxy?url=${encodeURIComponent(mintedUrl.finalUrl)}`,
         };
       } catch (error) {
         return null;
