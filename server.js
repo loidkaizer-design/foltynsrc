@@ -553,6 +553,50 @@ function embedPlayerHandler(req, res) {
 }
 
 app.get('/api/movie/e/:tmdb_id', embedPlayerHandler);
+app.get('/src/movie/:tmdb_id', async (req, res) => {
+  try {
+    const result = await getPlaylist(String(req.params.tmdb_id));
+    const galaxyNames = [
+      'Milkyway',
+      'Andromeda',
+      'Sombrero',
+      'Whirlpool',
+      'Triangulum',
+      'Pinwheel',
+      'Cartwheel',
+      'Centaurus A',
+      'Messier 87',
+      'Large Magellanic Cloud',
+    ];
+    const forwardedProto = req.headers['x-forwarded-proto'];
+    const protocol = (Array.isArray(forwardedProto) ? forwardedProto[0] : forwardedProto)?.split(',')[0] || req.protocol;
+    const origin = `${protocol}://${req.get('host')}`;
+
+    const sources = await Promise.all(result.servers.map(async (server, index) => {
+      try {
+        const mintedUrl = await stampStreamUrl(server.raw);
+        return {
+          name: galaxyNames[index] || `Galaxy ${index + 1}`,
+          proxyUrl: `${origin}/proxy?url=${encodeURIComponent(mintedUrl)}`,
+        };
+      } catch (error) {
+        return null;
+      }
+    }));
+
+    const availableSources = sources.filter(Boolean);
+    if (!availableSources.length) {
+      return res.status(404).type('text/plain').send('No playable source found');
+    }
+
+    const body = availableSources
+      .map(({ name, proxyUrl }) => `source = ("${name}")\\nmovie_proxy_url = ("${proxyUrl}")`)
+      .join('\\n\\n');
+    return res.type('text/plain').send(body);
+  } catch (error) {
+    return res.status(502).type('text/plain').send(error.message || 'Source lookup failed');
+  }
+});
 app.get(['/api', '/api/movie'], movieApiHandler);
 
 // Export for Vercel serverless (also runnable locally with `node server.js`)
